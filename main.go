@@ -56,6 +56,10 @@ func launched(app appkit.Application, delegate *appkit.ApplicationDelegate) {
 		logger.Error("Loading config", "error", err)
 	}
 
+	if cfg.Interval == 0 {
+		cfg.Interval = 60
+	}
+
 	item := appkit.StatusBar_SystemStatusBar().StatusItemWithLength(-1)
 	objc.Retain(&item)
 	item.Button().SetTitle("🔄 AirDash")
@@ -63,7 +67,7 @@ func launched(app appkit.Application, delegate *appkit.ApplicationDelegate) {
 	go func() {
 		for {
 			select {
-			case <-time.After(5 * time.Second):
+			case <-time.After(time.Duration(cfg.Interval) * time.Second):
 				payload, err := fetchMeasures(cfg.Token)
 				if err != nil {
 					logger.Error("Fetching measures", "error", err)

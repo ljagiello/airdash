@@ -8,7 +8,8 @@ import (
 )
 
 type Config struct {
-	Token string `yaml:"token"`
+	Token    string `yaml:"token"`
+	Interval int    `yaml:"interval"`
 }
 
 func LoadConfig(path string) (*Config, error) {
