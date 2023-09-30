@@ -1,0 +1,8 @@
+github.com/go-test/deep v1.1.0 h1:WOcxcdHcvdgThNXjw0t76K42FXTU7HpNQWHpA2HHNlg=
+github.com/go-test/deep v1.1.0/go.mod h1:5C2ZWiW0ErCdrYzpqxLbTX7MG14M9iiw8DgHncVwcsE=
+github.com/progrium/macdriver v0.5.0-preview.0.20230925233903-5cbb735647c0 h1:1xYV/JnbBzLDLgQ8RG5JYIZ6zWdMqCjqCfu9w7mNrS4=
+github.com/progrium/macdriver v0.5.0-preview.0.20230925233903-5cbb735647c0/go.mod h1:eGZ1EqLpM/E39G7m1QwqPWwP8lu1eLYKuMaZGqt7P3w=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
+gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
