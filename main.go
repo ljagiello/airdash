@@ -12,29 +12,6 @@ import (
 	"github.com/progrium/macdriver/objc"
 )
 
-type AirGradientMeasures []struct {
-	LocationID         int       `json:"locationId"`
-	LocationName       string    `json:"locationName"`
-	Pm01               any       `json:"pm01"`
-	Pm02               int       `json:"pm02"`
-	Pm10               any       `json:"pm10"`
-	Pm003Count         any       `json:"pm003Count"`
-	Atmp               float64   `json:"atmp"`
-	Rhum               int       `json:"rhum"`
-	Rco2               int       `json:"rco2"`
-	Tvoc               float64   `json:"tvoc"`
-	Wifi               int       `json:"wifi"`
-	Timestamp          time.Time `json:"timestamp"`
-	LedMode            string    `json:"ledMode"`
-	LedCo2Threshold1   int       `json:"ledCo2Threshold1"`
-	LedCo2Threshold2   int       `json:"ledCo2Threshold2"`
-	LedCo2ThresholdEnd int       `json:"ledCo2ThresholdEnd"`
-	Serialno           string    `json:"serialno"`
-	FirmwareVersion    any       `json:"firmwareVersion"`
-	TvocIndex          int       `json:"tvocIndex"`
-	NoxIndex           int       `json:"noxIndex"`
-}
-
 func main() {
 	macos.RunApp(launched)
 }
@@ -80,12 +57,22 @@ func launched(app appkit.Application, delegate *appkit.ApplicationDelegate) {
 					return
 				}
 			}
+			if len(airGradientMeasures) == 0 {
+				logger.Error("No measurements found")
+				return
+			}
+
 			logger.Debug("AirGradientMeasures", "measures", airGradientMeasures[0])
+
+			temperature := airGradientMeasures[0].Atmp
+			if cfg.TempUnit == "F" {
+				temperature = (airGradientMeasures[0].Atmp * 9 / 5) + 32
+			}
 
 			// updates to the ui should happen on the main thread to avoid segfaults
 			dispatch.MainQueue().DispatchAsync(func() {
-				item.Button().SetTitle(fmt.Sprintf("🌡️%.2fF  💨 %d  💦 %d  🫧 %d",
-					(airGradientMeasures[0].Atmp*9/5)+32,
+				item.Button().SetTitle(fmt.Sprintf("🌡️%.2f  💨 %d  💦 %d  🫧 %d",
+					temperature,
 					airGradientMeasures[0].Pm02,
 					airGradientMeasures[0].Rhum,
 					airGradientMeasures[0].Rco2,
