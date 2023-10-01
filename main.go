@@ -71,7 +71,7 @@ func launched(app appkit.Application, delegate *appkit.ApplicationDelegate) {
 
 			// updates to the ui should happen on the main thread to avoid segfaults
 			dispatch.MainQueue().DispatchAsync(func() {
-				item.Button().SetTitle(fmt.Sprintf("🌡️%.2f  💨 %d  💦 %d  🫧 %d",
+				item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %d  💦 %d  🫧 %d",
 					temperature,
 					airGradientMeasures[0].Pm02,
 					airGradientMeasures[0].Rhum,
