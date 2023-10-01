@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Token    string `yaml:"token"`
 	Interval int    `yaml:"interval"`
+	TempUnit string `yaml:"tempUnit"`
 }
 
 func LoadConfig(path string) (*Config, error) {
