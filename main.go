@@ -11,6 +11,8 @@ import (
 	"github.com/progrium/macdriver/objc"
 )
 
+const AIR_GRADIENT_API_URL = "https://api.airgradient.com/public/api/v1/locations/measures/current"
+
 func main() {
 	macos.RunApp(launched)
 }
@@ -44,7 +46,11 @@ func launched(app appkit.Application, delegate *appkit.ApplicationDelegate) {
 		for {
 			select {
 			case <-time.After(time.Duration(cfg.Interval) * time.Second):
-				airGradientMeasures = getAirGradientMeasures(cfg.Token)
+				airGradientMeasures, err = getAirGradientMeasures(AIR_GRADIENT_API_URL, cfg.Token)
+				if err != nil {
+					logger.Error("Fetching measures", "error", err)
+					continue
+				}
 			}
 
 			if len(airGradientMeasures) == 0 {

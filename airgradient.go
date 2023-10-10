@@ -2,12 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"time"
 )
-
-const AIR_GRADIENT_API_URL = "https://api.airgradient.com/public/api/v1/locations/measures/current"
 
 type AirGradientMeasures []struct {
 	LocationID         int       `json:"locationId"`
@@ -32,10 +31,10 @@ type AirGradientMeasures []struct {
 	NoxIndex           float64   `json:"noxIndex"`
 }
 
-func fetchMeasures(token string) ([]byte, error) {
+func fetchMeasures(airGradientAPIUrl string, token string) ([]byte, error) {
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", AIR_GRADIENT_API_URL, nil)
+	req, err := http.NewRequest("GET", airGradientAPIUrl, nil)
 	if err != nil {
 		logger.Error("Creating HTTP request", "error", err)
 		return nil, err
@@ -61,17 +60,18 @@ func fetchMeasures(token string) ([]byte, error) {
 	return body, nil
 }
 
-func getAirGradientMeasures(token string) (airGradientMeasures AirGradientMeasures) {
-	payload, err := fetchMeasures(token)
+func getAirGradientMeasures(airGradientAPIUrl string, token string) (AirGradientMeasures, error) {
+	payload, err := fetchMeasures(airGradientAPIUrl, token)
 	if err != nil {
-		logger.Error("Fetching measures", "error", err)
-		return
+		return nil, err
 	}
+
+	var airGradientMeasures AirGradientMeasures
 
 	err = json.Unmarshal(payload, &airGradientMeasures)
 	if err != nil {
-		logger.Error("Parsing JSON payload", "error", err)
-		return
+		return nil, errors.New("Error unmarshalling JSON")
 	}
-	return airGradientMeasures
+
+	return airGradientMeasures, nil
 }
