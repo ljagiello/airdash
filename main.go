@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -11,6 +10,8 @@ import (
 	"github.com/progrium/macdriver/macos/appkit"
 	"github.com/progrium/macdriver/objc"
 )
+
+const AIR_GRADIENT_API_URL = "https://api.airgradient.com/public/api/v1/locations/measures/current"
 
 func main() {
 	macos.RunApp(launched)
@@ -45,18 +46,13 @@ func launched(app appkit.Application, delegate *appkit.ApplicationDelegate) {
 		for {
 			select {
 			case <-time.After(time.Duration(cfg.Interval) * time.Second):
-				payload, err := fetchMeasures(cfg.Token)
+				airGradientMeasures, err = getAirGradientMeasures(AIR_GRADIENT_API_URL, cfg.Token)
 				if err != nil {
 					logger.Error("Fetching measures", "error", err)
-					return
-				}
-
-				err = json.Unmarshal(payload, &airGradientMeasures)
-				if err != nil {
-					logger.Error("Parsing JSON payload", "error", err)
-					return
+					continue
 				}
 			}
+
 			if len(airGradientMeasures) == 0 {
 				logger.Error("No measurements found")
 				return
@@ -71,7 +67,7 @@ func launched(app appkit.Application, delegate *appkit.ApplicationDelegate) {
 
 			// updates to the ui should happen on the main thread to avoid segfaults
 			dispatch.MainQueue().DispatchAsync(func() {
-				item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %d  💦 %d  🫧 %d",
+				item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
 					temperature,
 					airGradientMeasures[0].Pm02,
 					airGradientMeasures[0].Rhum,
