@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -45,18 +44,9 @@ func launched(app appkit.Application, delegate *appkit.ApplicationDelegate) {
 		for {
 			select {
 			case <-time.After(time.Duration(cfg.Interval) * time.Second):
-				payload, err := fetchMeasures(cfg.Token)
-				if err != nil {
-					logger.Error("Fetching measures", "error", err)
-					return
-				}
-
-				err = json.Unmarshal(payload, &airGradientMeasures)
-				if err != nil {
-					logger.Error("Parsing JSON payload", "error", err)
-					return
-				}
+				airGradientMeasures = getAirGradientMeasures(cfg.Token)
 			}
+
 			if len(airGradientMeasures) == 0 {
 				logger.Error("No measurements found")
 				return

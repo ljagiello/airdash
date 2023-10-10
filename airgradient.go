@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"time"
@@ -58,4 +59,19 @@ func fetchMeasures(token string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+func getAirGradientMeasures(token string) (airGradientMeasures AirGradientMeasures) {
+	payload, err := fetchMeasures(token)
+	if err != nil {
+		logger.Error("Fetching measures", "error", err)
+		return
+	}
+
+	err = json.Unmarshal(payload, &airGradientMeasures)
+	if err != nil {
+		logger.Error("Parsing JSON payload", "error", err)
+		return
+	}
+	return airGradientMeasures
 }
