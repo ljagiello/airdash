@@ -45,11 +45,11 @@ func getAirGradientAPIURL(locationID int) string {
 // convertTemperature converts the temperature from Celsius to Fahrenheit if the
 // temperature unit is set to Fahrenheit
 // By default the temperature unit is Celsius
-func convertTemperature(temp float64, tempUnit string) float64 {
+func convertTemperature(temperature float64, tempUnit string) float64 {
 	if tempUnit == "F" {
-		return (temp * 9 / 5) + 32
+		return (temperature * 9 / 5) + 32
 	}
-	return temp
+	return temperature
 }
 
 func fetchMeasures(airGradientAPIUrl string, token string) ([]byte, error) {
