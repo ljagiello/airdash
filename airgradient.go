@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
 )
 
-type AirGradientMeasures []struct {
+type AirGradientMeasures struct {
 	LocationID         int       `json:"locationId"`
 	LocationName       string    `json:"locationName"`
 	Pm01               float64   `json:"pm01"`
@@ -31,6 +32,27 @@ type AirGradientMeasures []struct {
 	NoxIndex           float64   `json:"noxIndex"`
 }
 
+var ErrBadPayload = errors.New("Error unmarshalling JSON")
+
+// getAirGradientAPIURL returns the AirGradient API URL
+func getAirGradientAPIURL(locationID int) string {
+	if locationID != 0 {
+		return fmt.Sprintf("https://api.airgradient.com/public/api/v1/locations/%d/measures/current", locationID)
+	}
+	return fmt.Sprintf("https://api.airgradient.com/public/api/v1/locations/measures/current")
+}
+
+// convertTemperature converts the temperature from Celsius to Fahrenheit if the
+// temperature unit is set to Fahrenheit
+// By default the temperature unit is Celsius
+func convertTemperature(temperature float64, tempUnit string) float64 {
+	if tempUnit == "F" {
+		return (temperature * 9 / 5) + 32
+	}
+	return temperature
+}
+
+// fetchMeasures fetches the measures from the AirGradient API
 func fetchMeasures(airGradientAPIUrl string, token string) ([]byte, error) {
 	client := &http.Client{}
 
@@ -61,16 +83,34 @@ func fetchMeasures(airGradientAPIUrl string, token string) ([]byte, error) {
 }
 
 func getAirGradientMeasures(airGradientAPIUrl string, token string) (AirGradientMeasures, error) {
-	payload, err := fetchMeasures(airGradientAPIUrl, token)
-	if err != nil {
-		return nil, err
-	}
-
+	var arrayAirGradientMeasures []AirGradientMeasures
 	var airGradientMeasures AirGradientMeasures
 
-	err = json.Unmarshal(payload, &airGradientMeasures)
+	payload, err := fetchMeasures(airGradientAPIUrl, token)
 	if err != nil {
-		return nil, errors.New("Error unmarshalling JSON")
+		return airGradientMeasures, err
+	}
+
+	var checkInterface interface{}
+	json.Unmarshal(payload, &checkInterface)
+
+	switch checkInterface.(type) {
+	case map[string]interface{}:
+		err = json.Unmarshal(payload, &airGradientMeasures)
+		if err != nil {
+			return airGradientMeasures, ErrBadPayload
+		}
+	case []interface{}:
+		err = json.Unmarshal(payload, &arrayAirGradientMeasures)
+		if err != nil {
+			return airGradientMeasures, ErrBadPayload
+		}
+		if len(arrayAirGradientMeasures) == 0 {
+			return airGradientMeasures, ErrBadPayload
+		}
+		airGradientMeasures = arrayAirGradientMeasures[0]
+	default:
+		return airGradientMeasures, ErrBadPayload
 	}
 
 	return airGradientMeasures, nil

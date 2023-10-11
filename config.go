@@ -8,11 +8,13 @@ import (
 )
 
 type Config struct {
-	Token    string `yaml:"token"`
-	Interval int    `yaml:"interval"`
-	TempUnit string `yaml:"tempUnit"`
+	Token      string `yaml:"token"`
+	LocationID int    `yaml:"locationId"`
+	Interval   int    `yaml:"interval"`
+	TempUnit   string `yaml:"tempUnit"`
 }
 
+// LoadConfig loads the config from the given path
 func LoadConfig(path string) (*Config, error) {
 	f, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {

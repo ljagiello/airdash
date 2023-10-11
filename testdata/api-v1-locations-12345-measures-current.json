@@ -1,0 +1,1 @@
+{"locationId":12345,"locationName":"Test Loc","pm01":null,"pm02":5,"pm10":null,"pm003Count":null,"atmp":23.3,"rhum":53,"rco2":537,"tvoc":93.979355,"wifi":-52,"timestamp":"2023-10-11T04:50:46.000Z","ledMode":"co2","ledCo2Threshold1":1000,"ledCo2Threshold2":2000,"ledCo2ThresholdEnd":4000,"serialno":"aabb12","firmwareVersion":null,"tvocIndex":100,"noxIndex":1}

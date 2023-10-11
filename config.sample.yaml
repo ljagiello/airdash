@@ -1,3 +1,4 @@
 token: <your-secret-token>
+locationId: 0
 interval: 60
 tempUnit: F

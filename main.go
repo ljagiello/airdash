@@ -11,8 +11,6 @@ import (
 	"github.com/progrium/macdriver/objc"
 )
 
-const AIR_GRADIENT_API_URL = "https://api.airgradient.com/public/api/v1/locations/measures/current"
-
 func main() {
 	macos.RunApp(launched)
 }
@@ -38,6 +36,8 @@ func launched(app appkit.Application, delegate *appkit.ApplicationDelegate) {
 		cfg.Interval = 60
 	}
 
+	airGradientAPIURL := getAirGradientAPIURL(cfg.LocationID)
+
 	item := appkit.StatusBar_SystemStatusBar().StatusItemWithLength(-1)
 	objc.Retain(&item)
 	item.Button().SetTitle("🔄 AirDash")
@@ -46,32 +46,24 @@ func launched(app appkit.Application, delegate *appkit.ApplicationDelegate) {
 		for {
 			select {
 			case <-time.After(time.Duration(cfg.Interval) * time.Second):
-				airGradientMeasures, err = getAirGradientMeasures(AIR_GRADIENT_API_URL, cfg.Token)
+				airGradientMeasures, err = getAirGradientMeasures(airGradientAPIURL, cfg.Token)
 				if err != nil {
 					logger.Error("Fetching measures", "error", err)
 					continue
 				}
 			}
+			logger.Debug("AirGradientMeasures", "measures", airGradientMeasures)
 
-			if len(airGradientMeasures) == 0 {
-				logger.Error("No measurements found")
-				return
-			}
-
-			logger.Debug("AirGradientMeasures", "measures", airGradientMeasures[0])
-
-			temperature := airGradientMeasures[0].Atmp
-			if cfg.TempUnit == "F" {
-				temperature = (airGradientMeasures[0].Atmp * 9 / 5) + 32
-			}
+			// convert the temperature to the desired unit
+			temperature := convertTemperature(airGradientMeasures.Atmp, cfg.TempUnit)
 
 			// updates to the ui should happen on the main thread to avoid segfaults
 			dispatch.MainQueue().DispatchAsync(func() {
 				item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
 					temperature,
-					airGradientMeasures[0].Pm02,
-					airGradientMeasures[0].Rhum,
-					airGradientMeasures[0].Rco2,
+					airGradientMeasures.Pm02,
+					airGradientMeasures.Rhum,
+					airGradientMeasures.Rco2,
 				))
 			})
 		}

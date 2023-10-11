@@ -7,6 +7,7 @@ Show AirGradient measurements in MacOS menu bar
 Configuration location - `~user/.airdash/config.yaml`
 ```yaml
 token: <secret-token>
+locationId: <location-id>
 interval: 60
 tempUnit: F
 ```
