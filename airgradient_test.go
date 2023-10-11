@@ -9,6 +9,57 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGetAirGradientAPIURL(t *testing.T) {
+	var testCases = []struct {
+		name        string
+		locationID  int
+		expectedURL string
+	}{
+		{
+			"location-id-0",
+			0,
+			"https://api.airgradient.com/public/api/v1/locations/measures/current",
+		},
+		{
+			"location-id-12345",
+			12345,
+			"https://api.airgradient.com/public/api/v1/locations/12345/measures/current",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.name, func(t *testing.T) {
+			assert.Equal(t, tC.expectedURL, getAirGradientAPIURL(tC.locationID))
+		})
+	}
+}
+
+func TestConvertTemp(t *testing.T) {
+	var testCases = []struct {
+		name     string
+		temp     float64
+		tempUnit string
+		expected float64
+	}{
+		{
+			"convert-celsius-to-fahrenheit",
+			20,
+			"F",
+			68,
+		},
+		{
+			"no-conversion",
+			20,
+			"C",
+			20,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.name, func(t *testing.T) {
+			assert.Equal(t, tC.expected, convertTemperature(tC.temp, tC.tempUnit))
+		})
+	}
+}
+
 func TestGetAirGradientMeasures(t *testing.T) {
 	var testCases = []struct {
 		name        string
@@ -16,18 +67,23 @@ func TestGetAirGradientMeasures(t *testing.T) {
 		err         error
 	}{
 		{
-			"correct-response",
-			"testdata/correct_response1.json",
+			"correct-api-v1-locations-measures-current",
+			"testdata/api-v1-locations-measures-current.json",
 			nil,
 		},
 		{
-			"correct-response2",
-			"testdata/correct_response2.json",
+			"correct-api-v1-locations-measures-current-with-more-float64",
+			"testdata/api-v1-locations-measures-current-with-more-float64.json",
 			nil,
 		},
 		{
-			"incorrect-response",
-			"testdata/incorrect_response1.json",
+			"correct-api-v1-locations-12345-measures-current",
+			"testdata/api-v1-locations-12345-measures-current.json",
+			nil,
+		},
+		{
+			"incorrect-response-404",
+			"testdata/incorrect-response-404.json",
 			errors.New("Error unmarshalling JSON"),
 		},
 	}

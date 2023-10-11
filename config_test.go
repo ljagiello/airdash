@@ -30,14 +30,16 @@ func TestLoadConfig(t *testing.T) {
 		name          string
 		configContent []byte
 		token         string
+		locationID    int
 		interval      int
 		tempUnit      string
 		err           error
 	}{
 		{
 			"full-token",
-			[]byte(fmt.Sprintf("token: \"1234567890\"\ninterval: 60\ntempUnit: \"C\"")),
+			[]byte(fmt.Sprintf("token: \"1234567890\"\nlocationId: 0\ninterval: 60\ntempUnit: \"C\"")),
 			"1234567890",
+			0,
 			60,
 			"C",
 			nil,
@@ -47,6 +49,7 @@ func TestLoadConfig(t *testing.T) {
 			[]byte(fmt.Sprintf("token: \"1234567890\"\ntempUnit: \"F\"")),
 			"1234567890",
 			0,
+			0,
 			"F",
 			nil,
 		},
@@ -54,6 +57,7 @@ func TestLoadConfig(t *testing.T) {
 			"invalid-config",
 			[]byte(`foobar-invalid`),
 			"",
+			0,
 			0,
 			"",
 			&yaml.TypeError{Errors: []string{"line 1: cannot unmarshal !!str `foobar-...` into main.Config"}}},
@@ -68,6 +72,7 @@ func TestLoadConfig(t *testing.T) {
 			cfg, err := LoadConfig(tempFile.Name())
 			if err == nil {
 				assert.Equal(t, tC.token, cfg.Token)
+				assert.Equal(t, tC.locationID, cfg.LocationID)
 				assert.Equal(t, tC.interval, cfg.Interval)
 				assert.Equal(t, tC.tempUnit, cfg.TempUnit)
 			}
