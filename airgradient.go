@@ -52,6 +52,7 @@ func convertTemperature(temperature float64, tempUnit string) float64 {
 	return temperature
 }
 
+// fetchMeasures fetches the measures from the AirGradient API
 func fetchMeasures(airGradientAPIUrl string, token string) ([]byte, error) {
 	client := &http.Client{}
 
