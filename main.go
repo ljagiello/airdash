@@ -42,26 +42,26 @@ func main() {
 
 	go func() {
 		for {
-			time.Sleep(time.Duration(cfg.Interval) * time.Second)
 			airGradientMeasures, err = getAirGradientMeasures(airGradientAPIURL, cfg.Token)
 			if err != nil {
 				logger.Error("Fetching measures", "error", err)
-				continue
+			} else {
+				logger.Debug("AirGradientMeasures", "measures", airGradientMeasures)
+
+				// convert the temperature to the desired unit
+				temperature := convertTemperature(airGradientMeasures.Atmp, cfg.TempUnit)
+
+				// updates to the ui should happen on the main thread to avoid segfaults
+				dispatch.MainQueue().DispatchAsync(func() {
+					item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
+						temperature,
+						airGradientMeasures.Pm02,
+						airGradientMeasures.Rhum,
+						airGradientMeasures.Rco2,
+					))
+				})
 			}
-			logger.Debug("AirGradientMeasures", "measures", airGradientMeasures)
-
-			// convert the temperature to the desired unit
-			temperature := convertTemperature(airGradientMeasures.Atmp, cfg.TempUnit)
-
-			// updates to the ui should happen on the main thread to avoid segfaults
-			dispatch.MainQueue().DispatchAsync(func() {
-				item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
-					temperature,
-					airGradientMeasures.Pm02,
-					airGradientMeasures.Rhum,
-					airGradientMeasures.Rco2,
-				))
-			})
+			time.Sleep(time.Duration(cfg.Interval) * time.Second)
 		}
 	}()
 
