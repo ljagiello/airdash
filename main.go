@@ -41,27 +41,51 @@ func main() {
 	item.Button().SetTitle("🔄 AirDash")
 
 	go func() {
-		for {
+		ticker := time.NewTicker(time.Duration(cfg.Interval) * time.Second)
+		defer ticker.Stop()
+
+		// Fetch data immediately on startup
+		airGradientMeasures, err = getAirGradientMeasures(airGradientAPIURL, cfg.Token)
+		if err != nil {
+			logger.Error("Fetching measures", "error", err)
+		} else {
+			logger.Debug("AirGradientMeasures", "measures", airGradientMeasures)
+
+			// convert the temperature to the desired unit
+			temperature := convertTemperature(airGradientMeasures.Atmp, cfg.TempUnit)
+
+			// updates to the ui should happen on the main thread to avoid segfaults
+			dispatch.MainQueue().DispatchAsync(func() {
+				item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
+					temperature,
+					airGradientMeasures.Pm02,
+					airGradientMeasures.Rhum,
+					airGradientMeasures.Rco2,
+				))
+			})
+		}
+
+		// Continue fetching at regular intervals
+		for range ticker.C {
 			airGradientMeasures, err = getAirGradientMeasures(airGradientAPIURL, cfg.Token)
 			if err != nil {
 				logger.Error("Fetching measures", "error", err)
-			} else {
-				logger.Debug("AirGradientMeasures", "measures", airGradientMeasures)
-
-				// convert the temperature to the desired unit
-				temperature := convertTemperature(airGradientMeasures.Atmp, cfg.TempUnit)
-
-				// updates to the ui should happen on the main thread to avoid segfaults
-				dispatch.MainQueue().DispatchAsync(func() {
-					item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
-						temperature,
-						airGradientMeasures.Pm02,
-						airGradientMeasures.Rhum,
-						airGradientMeasures.Rco2,
-					))
-				})
+				continue
 			}
-			time.Sleep(time.Duration(cfg.Interval) * time.Second)
+			logger.Debug("AirGradientMeasures", "measures", airGradientMeasures)
+
+			// convert the temperature to the desired unit
+			temperature := convertTemperature(airGradientMeasures.Atmp, cfg.TempUnit)
+
+			// updates to the ui should happen on the main thread to avoid segfaults
+			dispatch.MainQueue().DispatchAsync(func() {
+				item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
+					temperature,
+					airGradientMeasures.Pm02,
+					airGradientMeasures.Rhum,
+					airGradientMeasures.Rco2,
+				))
+			})
 		}
 	}()
 
