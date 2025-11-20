@@ -180,7 +180,8 @@ func main() {
 		handlerClass = objc.AllocateClass(objc.GetClass("NSObject"), className, 0)
 
 		// Add method BEFORE registering the class
-		objc.AddMethod(handlerClass, objc.Sel("showAbout:"), func(self objc.Object, cmd objc.Selector) {
+		// The signature must match: func(self, cmd, sender) for a selector with ":"
+		objc.AddMethod(handlerClass, objc.Sel("showAbout:"), func(self objc.Object, cmd objc.Selector, sender objc.Object) {
 			showAboutWindow()
 		})
 
