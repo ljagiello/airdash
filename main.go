@@ -34,13 +34,12 @@ func main() {
 	app := appkit.Application_SharedApplication()
 	app.SetActivationPolicy(appkit.ApplicationActivationPolicyAccessory)
 
-	var airGradientMeasures AirGradientMeasures
-
 	item := appkit.StatusBar_SystemStatusBar().StatusItemWithLength(-1)
 	objc.Retain(&item)
 	item.Button().SetTitle("🔄 AirDash")
 
 	go func() {
+		var airGradientMeasures AirGradientMeasures
 		ticker := time.NewTicker(time.Duration(cfg.Interval) * time.Second)
 		defer ticker.Stop()
 
