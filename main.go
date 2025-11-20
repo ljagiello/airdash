@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/progrium/darwinkit/dispatch"
@@ -18,7 +19,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfg, err := LoadConfig(homeDirectory + "/.airdash/config.yaml")
+	cfg, err := LoadConfig(filepath.Join(homeDirectory, ".airdash", "config.yaml"))
 	if err != nil {
 		logger.Error("Loading config", "error", err)
 		os.Exit(1)
@@ -38,53 +39,38 @@ func main() {
 	objc.Retain(&item)
 	item.Button().SetTitle("🔄 AirDash")
 
+	updateStatus := func() {
+		measures, err := getAirGradientMeasures(airGradientAPIURL, cfg.Token)
+		if err != nil {
+			logger.Error("Fetching measures", "error", err)
+			return
+		}
+		logger.Debug("AirGradientMeasures", "measures", measures)
+
+		// convert the temperature to the desired unit
+		temperature := convertTemperature(measures.Atmp, cfg.TempUnit)
+
+		// updates to the ui should happen on the main thread to avoid segfaults
+		dispatch.MainQueue().DispatchAsync(func() {
+			item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
+				temperature,
+				measures.Pm02,
+				measures.Rhum,
+				measures.Rco2,
+			))
+		})
+	}
+
 	go func() {
-		var airGradientMeasures AirGradientMeasures
+		// Fetch data immediately on startup
+		updateStatus()
+
 		ticker := time.NewTicker(time.Duration(cfg.Interval) * time.Second)
 		defer ticker.Stop()
 
-		// Fetch data immediately on startup
-		airGradientMeasures, err = getAirGradientMeasures(airGradientAPIURL, cfg.Token)
-		if err != nil {
-			logger.Error("Fetching measures", "error", err)
-		} else {
-			logger.Debug("AirGradientMeasures", "measures", airGradientMeasures)
-
-			// convert the temperature to the desired unit
-			temperature := convertTemperature(airGradientMeasures.Atmp, cfg.TempUnit)
-
-			// updates to the ui should happen on the main thread to avoid segfaults
-			dispatch.MainQueue().DispatchAsync(func() {
-				item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
-					temperature,
-					airGradientMeasures.Pm02,
-					airGradientMeasures.Rhum,
-					airGradientMeasures.Rco2,
-				))
-			})
-		}
-
 		// Continue fetching at regular intervals
 		for range ticker.C {
-			airGradientMeasures, err = getAirGradientMeasures(airGradientAPIURL, cfg.Token)
-			if err != nil {
-				logger.Error("Fetching measures", "error", err)
-				continue
-			}
-			logger.Debug("AirGradientMeasures", "measures", airGradientMeasures)
-
-			// convert the temperature to the desired unit
-			temperature := convertTemperature(airGradientMeasures.Atmp, cfg.TempUnit)
-
-			// updates to the ui should happen on the main thread to avoid segfaults
-			dispatch.MainQueue().DispatchAsync(func() {
-				item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
-					temperature,
-					airGradientMeasures.Pm02,
-					airGradientMeasures.Rhum,
-					airGradientMeasures.Rco2,
-				))
-			})
+			updateStatus()
 		}
 	}()
 
