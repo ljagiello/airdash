@@ -49,9 +49,9 @@ Add the following secrets to your GitHub repository (Settings → Secrets and va
    git push origin v1.0.0
    ```
 3. The GitHub Actions workflow will automatically:
-   - Build universal binaries (Apple Silicon + Intel)
-   - Sign the binaries with your Developer ID
-   - Notarize the binaries with Apple
+   - Build arm64 binary for Apple Silicon
+   - Sign the binary with your Developer ID
+   - Notarize the binary with Apple
    - Create a GitHub release with the signed artifacts
 
 ## Verification
@@ -81,28 +81,4 @@ You should see output indicating the binary is properly signed and notarized.
 
 - Check the GoReleaser output in the GitHub Actions logs
 - Verify the certificate password is correct
-- Ensure quill is properly installed
-
-### Universal Binary Issues
-
-- Make sure CGO is enabled for both architectures
-- Verify darwinkit dependencies are compatible with both arm64 and amd64
-
-## Manual Local Release (Testing)
-
-To test the release process locally:
-
-```bash
-# Install GoReleaser and quill
-brew install goreleaser quill
-
-# Export required environment variables
-export MACOS_SIGN_P12_PATH=/path/to/certificate.p12
-export MACOS_SIGN_PASSWORD="your-password"
-export MACOS_NOTARY_KEY_PATH=/path/to/AuthKey.p8
-export MACOS_NOTARY_KEY_ID="your-key-id"
-export MACOS_NOTARY_ISSUER_ID="your-issuer-id"
-
-# Run GoReleaser in snapshot mode (no push to GitHub)
-goreleaser release --snapshot --clean
-```
+- Ensure the base64-encoded certificate and key are valid

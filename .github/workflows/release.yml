@@ -22,27 +22,6 @@ jobs:
         with:
           go-version: '1.25.4'
 
-      - name: Install quill
-        run: |
-          brew install anchore/quill/quill
-
-      - name: Prepare signing certificate
-        env:
-          MACOS_SIGN_P12_BASE64: ${{ secrets.MACOS_SIGN_P12_BASE64 }}
-          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
-        run: |
-          # Decode certificate and save to file
-          echo "$MACOS_SIGN_P12_BASE64" | base64 --decode > certificate.p12
-          echo "MACOS_SIGN_P12_PATH=$(pwd)/certificate.p12" >> $GITHUB_ENV
-
-      - name: Prepare notarization key
-        env:
-          MACOS_NOTARY_KEY_BASE64: ${{ secrets.MACOS_NOTARY_KEY_BASE64 }}
-        run: |
-          # Decode notarization key and save to file
-          echo "$MACOS_NOTARY_KEY_BASE64" | base64 --decode > notary_key.p8
-          echo "MACOS_NOTARY_KEY_PATH=$(pwd)/notary_key.p8" >> $GITHUB_ENV
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -51,13 +30,8 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MACOS_SIGN_P12_PATH: ${{ env.MACOS_SIGN_P12_PATH }}
+          MACOS_SIGN_P12_BASE64: ${{ secrets.MACOS_SIGN_P12_BASE64 }}
           MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
-          MACOS_NOTARY_KEY_PATH: ${{ env.MACOS_NOTARY_KEY_PATH }}
+          MACOS_NOTARY_KEY_BASE64: ${{ secrets.MACOS_NOTARY_KEY_BASE64 }}
           MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
           MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
-
-      - name: Clean up credentials
-        if: always()
-        run: |
-          rm -f certificate.p12 notary_key.p8

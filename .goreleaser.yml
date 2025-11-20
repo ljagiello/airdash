@@ -15,55 +15,28 @@ builds:
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
 
-signs:
-  - id: airdash-sign
-    cmd: quill
-    args:
-      - sign
-      - --p12
-      - ${certificate}
-      - --password
-      - ${certificate_password}
-      - --ad-hoc=false
-      - ${artifact}
-    artifacts: binary
-    env:
-      - certificate={{ .Env.MACOS_SIGN_P12_PATH }}
-      - certificate_password={{ .Env.MACOS_SIGN_PASSWORD }}
-
 notarize:
   macos:
-    - ids:
-        - airdash-sign
-      enabled: '{{ isEnvSet "MACOS_NOTARY_ISSUER_ID" }}'
-      cmd: quill
-      args:
-        - notarize
-        - ${artifact}
-        - --key
-        - ${notary_key_path}
-        - --key-id
-        - ${notary_key_id}
-        - --issuer
-        - ${notary_issuer_id}
-      env:
-        - notary_key_path={{ .Env.MACOS_NOTARY_KEY_PATH }}
-        - notary_key_id={{ .Env.MACOS_NOTARY_KEY_ID }}
-        - notary_issuer_id={{ .Env.MACOS_NOTARY_ISSUER_ID }}
+    - enabled: '{{ isEnvSet "MACOS_NOTARY_ISSUER_ID" }}'
+      ids:
+        - airdash
+      sign:
+        certificate: "{{.Env.MACOS_SIGN_P12_BASE64}}"
+        password: "{{.Env.MACOS_SIGN_PASSWORD}}"
+      notarize:
+        issuer_id: "{{.Env.MACOS_NOTARY_ISSUER_ID}}"
+        key_id: "{{.Env.MACOS_NOTARY_KEY_ID}}"
+        key: "{{.Env.MACOS_NOTARY_KEY_BASE64}}"
 
 archives:
   - id: airdash-archive
-    format: tar.gz
+    formats: [tar.gz]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
-      - README.md
       - LICENSE*
 
 checksum:
   name_template: 'checksums.txt'
-
-snapshot:
-  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
