@@ -1,9 +1,5 @@
 version: 2
 
-before:
-  hooks:
-    - go mod tidy
-
 builds:
   - id: airdash
     binary: airdash
@@ -12,7 +8,6 @@ builds:
     goos:
       - darwin
     goarch:
-      - amd64
       - arm64
     ldflags:
       - -s -w
@@ -20,16 +15,8 @@ builds:
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
 
-universal_binaries:
-  - id: airdash-universal
-    ids:
-      - airdash
-    name_template: airdash
-    replace: true
-
 signs:
   - id: airdash-sign
-    signature: "${artifact}.sig"
     cmd: quill
     args:
       - sign
@@ -39,7 +26,7 @@ signs:
       - ${certificate_password}
       - --ad-hoc=false
       - ${artifact}
-    artifacts: all
+    artifacts: binary
     env:
       - certificate={{ .Env.MACOS_SIGN_P12_PATH }}
       - certificate_password={{ .Env.MACOS_SIGN_PASSWORD }}
@@ -98,12 +85,12 @@ release:
   header: |
     ## AirDash {{ .Tag }} Release
 
-    ### Installation
+    ### Installation (Apple Silicon only)
 
-    Download the appropriate binary for your system, extract it, and run:
+    Download the binary, extract it, and run:
 
     ```bash
-    tar -xzf airdash_{{ .Version }}_darwin_{{ .Arch }}.tar.gz
+    tar -xzf airdash_{{ .Version }}_darwin_arm64.tar.gz
     chmod +x airdash
     ./airdash
     ```

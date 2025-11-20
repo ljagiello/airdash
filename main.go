@@ -80,11 +80,17 @@ func main() {
 		}
 	}()
 
+	itemAbout := appkit.NewMenuItem()
+	itemAbout.SetTitle(fmt.Sprintf("About AirDash %s", version))
+	itemAbout.SetEnabled(false)
+
 	itemQuit := appkit.NewMenuItem()
 	itemQuit.SetTitle("Quit")
 	itemQuit.SetAction(objc.Sel("terminate:"))
 
 	menu := appkit.NewMenu()
+	menu.AddItem(itemAbout)
+	menu.AddItem(appkit.MenuItem_SeparatorItem())
 	menu.AddItem(itemQuit)
 	item.SetMenu(menu)
 
