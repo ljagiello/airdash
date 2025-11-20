@@ -171,14 +171,22 @@ func main() {
 	itemAbout := appkit.NewMenuItem()
 	itemAbout.SetTitle("About AirDash")
 
-	// Create custom handler class and register method
-	handlerClass := objc.AllocateClass(objc.GetClass("NSObject"), "AboutMenuHandler", 0)
-	objc.RegisterClass(handlerClass)
-	objc.AddMethod(handlerClass, objc.Sel("showAbout:"), func(self objc.Object, cmd objc.Selector) {
-		dispatch.MainQueue().DispatchAsync(func() {
+	// Create custom handler class - check if it already exists first
+	className := "AirDashAboutHandler"
+	handlerClass := objc.GetClass(className)
+
+	if handlerClass.Ptr() == nil {
+		// Class doesn't exist, create it
+		handlerClass = objc.AllocateClass(objc.GetClass("NSObject"), className, 0)
+
+		// Add method BEFORE registering the class
+		objc.AddMethod(handlerClass, objc.Sel("showAbout:"), func(self objc.Object, cmd objc.Selector) {
 			showAboutWindow()
 		})
-	})
+
+		// Now register the class
+		objc.RegisterClass(handlerClass)
+	}
 
 	// Create instance of our handler class
 	handler := objc.Call[objc.Object](handlerClass, objc.Sel("alloc"))
