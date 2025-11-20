@@ -76,6 +76,11 @@ func fetchMeasures(airGradientAPIUrl string, token string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("HTTP request failed", "status", resp.StatusCode)
+		return nil, fmt.Errorf("HTTP %d from API", resp.StatusCode)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error("Reading HTTP request", "error", err)
@@ -94,19 +99,13 @@ func getAirGradientMeasures(airGradientAPIUrl string, token string) (AirGradient
 
 	// Try to unmarshal as a single object first
 	if err := json.Unmarshal(payload, &measures); err == nil {
-		// If it worked, verify it's not an empty/zero value masked as success?
-		// Actually, if it's an array "[]", Unmarshal to struct might succeed but result in zero fields?
-		// No, unmarshalling "[]" into a struct returns an error.
-		// So if this succeeds, it's an object.
 		return measures, nil
 	}
 
 	// If that failed, try as an array
 	var arrayMeasures []AirGradientMeasures
-	if err := json.Unmarshal(payload, &arrayMeasures); err == nil {
-		if len(arrayMeasures) > 0 {
-			return arrayMeasures[0], nil
-		}
+	if err := json.Unmarshal(payload, &arrayMeasures); err == nil && len(arrayMeasures) > 0 {
+		return arrayMeasures[0], nil
 	}
 
 	return measures, ErrBadPayload
