@@ -11,6 +11,12 @@ import (
 	"github.com/progrium/darwinkit/objc"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
 	// Load config first
 	homeDirectory, err := os.UserHomeDir()
