@@ -19,6 +19,7 @@ var (
 )
 
 var aboutWindow objc.Object
+var aboutMenuCallback func(objc.Object, objc.Selector, objc.Object) // Prevent GC
 
 func showAboutWindow() {
 	// If window already exists, just bring it to front
@@ -179,11 +180,13 @@ func main() {
 		// Class doesn't exist, create it
 		handlerClass = objc.AllocateClass(objc.GetClass("NSObject"), className, 0)
 
-		// Add method BEFORE registering the class
-		// The signature must match: func(self, cmd, sender) for a selector with ":"
-		objc.AddMethod(handlerClass, objc.Sel("showAbout:"), func(self objc.Object, cmd objc.Selector, sender objc.Object) {
+		// Store callback in global variable to prevent garbage collection
+		aboutMenuCallback = func(self objc.Object, cmd objc.Selector, sender objc.Object) {
 			showAboutWindow()
-		})
+		}
+
+		// Add method BEFORE registering the class
+		objc.AddMethod(handlerClass, objc.Sel("showAbout:"), aboutMenuCallback)
 
 		// Now register the class
 		objc.RegisterClass(handlerClass)
