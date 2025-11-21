@@ -235,30 +235,11 @@ cd airdash
 # Install dependencies
 go mod download
 
-# Run tests
-go test -v ./...
-
-# Run linter
-golangci-lint run
-
 # Build locally
 go build -o airdash .
 
 # Run
 ./airdash
-```
-
-### Project Structure
-
-```
-airdash/
-├── main.go           # macOS UI and app entry point
-├── airgradient.go    # AirGradient API client
-├── config.go         # Configuration loading
-├── log.go            # Structured logging
-├── assets/           # Embedded assets (logo)
-├── testdata/         # Test fixtures
-└── .github/          # CI/CD workflows
 ```
 
 ### Running Tests with Coverage
@@ -267,39 +248,6 @@ airdash/
 go test -v -race -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
 ```
-
-### Creating a Release
-
-Releases are automated via GitHub Actions. To create a new release:
-
-1. Ensure all changes are committed and pushed to `main`
-2. Create and push a version tag:
-   ```bash
-   git tag -a v0.0.2 -m "Release v0.0.2"
-   git push origin v0.0.2
-   ```
-
-The GitHub Actions workflow will automatically:
-- Build the arm64 binary
-- Sign with Apple Developer ID
-- Notarize with Apple
-- Create a GitHub release with downloadable artifacts
-
-**Release workflow:** `.github/workflows/release.yml`
-
-### Required GitHub Secrets (for maintainers)
-
-For signing and notarization, configure these secrets in your repository:
-
-| Secret | Description |
-|--------|-------------|
-| `MACOS_SIGN_P12_BASE64` | Base64-encoded Developer ID certificate (.p12) |
-| `MACOS_SIGN_PASSWORD` | Password for the .p12 certificate |
-| `MACOS_NOTARY_KEY_BASE64` | Base64-encoded App Store Connect API key (.p8) |
-| `MACOS_NOTARY_KEY_ID` | App Store Connect API Key ID |
-| `MACOS_NOTARY_ISSUER_ID` | App Store Connect Issuer ID (UUID) |
-
-See [Apple Developer documentation](https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution) for details on obtaining certificates and keys.
 
 ## API
 
