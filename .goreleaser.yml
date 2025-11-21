@@ -22,6 +22,8 @@ builds:
       post:
         - cmd: ./scripts/create-app-bundle.sh {{ .Path }} {{ .Version }}
           output: true
+        - cmd: ./scripts/create-dmg.sh dist/AirDash.app {{ .Version }}
+          output: true
 
 notarize:
   macos:
@@ -70,8 +72,8 @@ release:
 
     ### Installation (Apple Silicon only)
 
-    1. Download `airdash_{{ .Version }}_darwin_arm64.zip`
-    2. Extract the ZIP file
+    1. Download `AirDash-{{ .Version }}-arm64.dmg`
+    2. Open the DMG file
     3. Drag `AirDash.app` to the `Applications` folder
     4. Launch AirDash from Applications
     5. On first launch, it will automatically set up to run at login
