@@ -77,6 +77,47 @@ if [ -n "$MACOS_SIGN_IDENTITY" ]; then
 	# Verify signature
 	echo "Verifying signature..."
 	codesign --verify --deep --verbose=2 "$APP_BUNDLE"
+
+	# Notarize if credentials are available
+	if [ -n "$MACOS_NOTARY_ISSUER_ID" ] && [ -n "$MACOS_NOTARY_KEY_ID" ] && [ -n "$MACOS_NOTARY_KEY_BASE64" ]; then
+		echo "Notarizing app bundle..."
+
+		# Create temporary directory for notarization key
+		TEMP_DIR=$(mktemp -d)
+		KEY_FILE="$TEMP_DIR/AuthKey_${MACOS_NOTARY_KEY_ID}.p8"
+
+		# Decode and write the key
+		echo "$MACOS_NOTARY_KEY_BASE64" | base64 --decode > "$KEY_FILE"
+
+		# Create a ZIP for notarization (notarytool requires ZIP or DMG)
+		NOTARY_ZIP="$DIST_DIR/AirDash-notarize.zip"
+		echo "Creating ZIP for notarization..."
+		ditto -c -k --keepParent "$APP_BUNDLE" "$NOTARY_ZIP"
+
+		# Submit for notarization
+		echo "Submitting to Apple notary service..."
+		xcrun notarytool submit "$NOTARY_ZIP" \
+			--key "$KEY_FILE" \
+			--key-id "$MACOS_NOTARY_KEY_ID" \
+			--issuer "$MACOS_NOTARY_ISSUER_ID" \
+			--wait
+
+		# Check notarization status
+		if [ $? -eq 0 ]; then
+			echo "Notarization successful! Stapling ticket to app bundle..."
+			xcrun stapler staple "$APP_BUNDLE"
+			echo "Notarization complete"
+		else
+			echo "WARNING: Notarization failed - app may show security warnings"
+		fi
+
+		# Cleanup
+		rm -f "$NOTARY_ZIP"
+		rm -rf "$TEMP_DIR"
+	else
+		echo "WARNING: Notarization credentials not provided - app will show security warnings"
+		echo "         Set MACOS_NOTARY_ISSUER_ID, MACOS_NOTARY_KEY_ID, and MACOS_NOTARY_KEY_BASE64"
+	fi
 else
 	echo "WARNING: No signing identity provided - app will not be signed"
 	echo "         Set MACOS_SIGN_IDENTITY environment variable to sign the app"
