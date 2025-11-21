@@ -38,7 +38,7 @@ notarize:
 
 archives:
   - id: airdash-app
-    format: zip
+    formats: [zip]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - src: dist/AirDash.app/**/*
@@ -47,30 +47,6 @@ archives:
 
 checksum:
   name_template: 'checksums.txt'
-
-dmgs:
-  - id: airdash-dmg
-    ids:
-      - airdash-app
-    name: "AirDash-{{.Version}}-arm64"
-    title: "AirDash {{.Version}}"
-    icon: assets/app/logo.icns
-    window:
-      position:
-        x: 200
-        y: 120
-      size:
-        width: 600
-        height: 400
-    contents:
-      - x: 180
-        y: 170
-        type: file
-        path: dist/AirDash.app
-      - x: 420
-        y: 170
-        type: link
-        path: /Applications
 
 changelog:
   sort: asc
@@ -94,8 +70,8 @@ release:
 
     ### Installation (Apple Silicon only)
 
-    1. Download `AirDash-{{ .Version }}-arm64.dmg`
-    2. Open the DMG file
+    1. Download `airdash_{{ .Version }}_darwin_arm64.zip`
+    2. Extract the ZIP file
     3. Drag `AirDash.app` to the `Applications` folder
     4. Launch AirDash from Applications
     5. On first launch, it will automatically set up to run at login
