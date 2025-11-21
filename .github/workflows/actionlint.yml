@@ -8,8 +8,6 @@ on:
     paths:
       - '.github/**'
   merge_group:
-    paths:
-      - '.github/**'
 
 jobs:
   actionlint:
