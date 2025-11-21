@@ -1,5 +1,9 @@
 version: 2
 
+before:
+  hooks:
+    - go mod download
+
 builds:
   - id: airdash
     binary: airdash
@@ -14,12 +18,16 @@ builds:
       - -X main.version={{.Version}}
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
+    hooks:
+      post:
+        - cmd: ./scripts/create-app-bundle.sh {{ .Path }} {{ .Version }}
+          output: true
 
 notarize:
   macos:
     - enabled: '{{ isEnvSet "MACOS_NOTARY_ISSUER_ID" }}'
       ids:
-        - airdash
+        - airdash-app
       sign:
         certificate: "{{.Env.MACOS_SIGN_P12_BASE64}}"
         password: "{{.Env.MACOS_SIGN_PASSWORD}}"
@@ -29,14 +37,40 @@ notarize:
         key: "{{.Env.MACOS_NOTARY_KEY_BASE64}}"
 
 archives:
-  - id: airdash-archive
-    formats: [tar.gz]
+  - id: airdash-app
+    format: zip
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
-      - LICENSE*
+      - src: dist/AirDash.app/**/*
+        dst: AirDash.app
+        strip_parent: false
 
 checksum:
   name_template: 'checksums.txt'
+
+dmgs:
+  - id: airdash-dmg
+    ids:
+      - airdash-app
+    name: "AirDash-{{.Version}}-arm64"
+    title: "AirDash {{.Version}}"
+    icon: assets/logo.icns
+    window:
+      position:
+        x: 200
+        y: 120
+      size:
+        width: 600
+        height: 400
+    contents:
+      - x: 180
+        y: 170
+        type: file
+        path: dist/AirDash.app
+      - x: 420
+        y: 170
+        type: link
+        path: /Applications
 
 changelog:
   sort: asc
@@ -60,12 +94,10 @@ release:
 
     ### Installation (Apple Silicon only)
 
-    Download the binary, extract it, and run:
+    1. Download `AirDash-{{ .Version }}-arm64.dmg`
+    2. Open the DMG file
+    3. Drag `AirDash.app` to the `Applications` folder
+    4. Launch AirDash from Applications
+    5. On first launch, it will automatically set up to run at login
 
-    ```bash
-    tar -xzf airdash_{{ .Version }}_darwin_arm64.tar.gz
-    chmod +x airdash
-    ./airdash
-    ```
-
-    The binary is signed and notarized for macOS.
+    The app is signed and notarized for macOS.

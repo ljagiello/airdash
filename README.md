@@ -10,12 +10,13 @@
 
 ## Features
 
-- 🌡️ Real-time temperature, PM2.5, humidity, and CO2 levels in your menu bar
-- 🔄 Auto-refresh every 60 seconds (configurable)
-- 🎨 Clean, minimal menu bar interface
-- ℹ️ About window with version info and GitHub link
-- 🔐 Signed and notarized for macOS security
-- 🍎 Native macOS app using AppKit
+- Real-time temperature, PM2.5, humidity, and CO2 levels in your menu bar
+- Auto-refresh every 60 seconds (configurable)
+- Clean, minimal menu bar interface
+- Background daemon mode with automatic installation
+- About window with version info and GitHub link
+- Signed and notarized for macOS security
+- Native macOS app using AppKit
 
 ## Requirements
 
@@ -25,21 +26,29 @@
 
 ## Installation
 
-### Download Pre-built Binary (Recommended)
+### Option 1: Download DMG (Recommended)
+
+1. Download the latest DMG from [Releases](https://github.com/ljagiello/airdash/releases/latest)
+2. Open `AirDash-{version}-arm64.dmg`
+3. Drag `AirDash.app` to the Applications folder
+4. Launch AirDash from Applications
+5. On first launch, it automatically installs itself as a background service
+
+The app is signed and notarized - macOS will trust it automatically.
+
+### Option 2: Standalone Binary
 
 1. Download the latest release from [Releases](https://github.com/ljagiello/airdash/releases/latest)
 2. Extract the archive:
    ```bash
-   tar -xzf airdash_0.0.1_darwin_arm64.tar.gz
+   tar -xzf airdash_{version}_darwin_arm64.tar.gz
    ```
 3. Run the binary:
    ```bash
    ./airdash
    ```
 
-The binary is signed and notarized - macOS will trust it automatically.
-
-### Build from Source
+### Option 3: Build from Source
 
 ```bash
 git clone https://github.com/ljagiello/airdash.git
@@ -86,18 +95,54 @@ tempUnit: F
 
 ## Usage
 
-1. **Start AirDash:**
-   ```bash
-   ./airdash
-   ```
+### DMG Installation
 
-2. **Menu Bar:** Look for your current measurements displayed in the menu bar
+1. **First Launch:** After dragging to Applications and launching, AirDash automatically installs itself as a background service
+2. **Background Operation:** The app runs continuously in the background, fetching air quality data
+3. **No GUI Required:** Once installed, the daemon runs headlessly - no menu bar needed
+4. **Automatic Startup:** Starts automatically when you log in
 
-3. **Menu Options:**
-   - **About AirDash**: View version, build info, and GitHub link
-   - **Quit**: Exit the application
+### Standalone Binary
 
-The app runs in the background and updates automatically. It will fetch data immediately on startup and then refresh based on your configured interval.
+1. **Run once:** `./airdash` - runs in GUI mode with menu bar
+2. **Install daemon:** `./airdash install` - sets up automatic background service
+3. **Uninstall:** `./airdash uninstall` - removes background service
+
+### Daemon Mode
+
+AirDash runs as a LaunchAgent that continuously monitors air quality in the background.
+
+**Features:**
+- Fetches data at your configured interval
+- Logs measurements in JSON format
+- Automatically restarts if it crashes
+- Starts automatically at login
+
+**Managing the Daemon:**
+
+```bash
+# Check status
+launchctl list | grep airdash
+
+# View logs
+tail -f ~/Library/Logs/airdash.log
+
+# View errors
+tail -f ~/Library/Logs/airdash.error.log
+
+# Manual uninstall
+./airdash uninstall
+# Or for app bundle:
+/Applications/AirDash.app/Contents/MacOS/airdash uninstall
+```
+
+**File Locations:**
+- App: `/Applications/AirDash.app` (DMG install)
+- Binary: `~/.local/bin/airdash` (standalone install)
+- LaunchAgent: `~/Library/LaunchAgents/com.github.ljagiello.airdash.plist`
+- Logs: `~/Library/Logs/airdash.log`
+- Errors: `~/Library/Logs/airdash.error.log`
+- Config: `~/.airdash/config.yaml`
 
 ## Troubleshooting
 
@@ -144,6 +189,43 @@ If you see HTTP errors in logs:
 - Ensure you're on macOS 11 or later
 - Check for updates: [Releases](https://github.com/ljagiello/airdash/releases)
 - Report issues with crash logs: [GitHub Issues](https://github.com/ljagiello/airdash/issues)
+
+### Daemon not starting or stopping unexpectedly
+
+**Check daemon status:**
+```bash
+launchctl list | grep airdash
+```
+
+**View daemon logs:**
+```bash
+# View recent logs
+tail -50 ~/Library/Logs/airdash.log
+
+# View errors
+tail -50 ~/Library/Logs/airdash.error.log
+
+# Monitor logs in real-time
+tail -f ~/Library/Logs/airdash.log
+```
+
+**Manually restart daemon:**
+```bash
+launchctl stop com.github.ljagiello.airdash
+launchctl start com.github.ljagiello.airdash
+```
+
+**Reinstall daemon:**
+```bash
+./airdash uninstall
+./airdash install
+```
+
+**Common daemon issues:**
+- Config file missing or invalid - check `~/.airdash/config.yaml`
+- API token expired - update your token in config
+- Network connectivity issues - check internet connection
+- Binary moved or deleted - reinstall daemon
 
 ## Development
 
