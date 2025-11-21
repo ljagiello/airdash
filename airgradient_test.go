@@ -84,7 +84,7 @@ func TestGetAirGradientMeasures(t *testing.T) {
 		{
 			"incorrect-response-404",
 			"testdata/incorrect-response-404.json",
-			errors.New("Error unmarshalling JSON"),
+			errors.New("error unmarshalling JSON"),
 		},
 	}
 
