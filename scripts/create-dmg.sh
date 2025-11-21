@@ -45,4 +45,4 @@ hdiutil create -volname "AirDash ${VERSION}" \
 # Clean up
 rm -rf "$DMG_TMP_DIR"
 
-echo "✓ DMG created successfully: $DMG_PATH"
+echo "DMG created successfully: $DMG_PATH"

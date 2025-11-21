@@ -45,6 +45,8 @@ cat > "$CONTENTS/Info.plist" <<EOF
 	<string>APPL</string>
 	<key>CFBundleExecutable</key>
 	<string>airdash</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>11.0</string>
 	<key>LSUIElement</key>
@@ -57,13 +59,30 @@ cat > "$CONTENTS/Info.plist" <<EOF
 </plist>
 EOF
 
-# Copy logo if it exists (optional)
-if [ -f "assets/app/logo.png" ]; then
-	echo "Copying logo to Resources"
-	cp "assets/app/logo.png" "$RESOURCES/"
+# Generate and copy app icon
+if [ -f "assets/app/logo.svg" ]; then
+	echo "Generating app icon from logo.svg"
+	ICON_FILE="$RESOURCES/AppIcon.icns"
+	./scripts/generate-icon.sh "assets/app/logo.svg" "$ICON_FILE"
 fi
 
-echo "✓ App bundle created successfully"
+# Sign the app bundle if certificate is available
+if [ -n "$MACOS_SIGN_IDENTITY" ]; then
+	echo "Signing app bundle with identity: $MACOS_SIGN_IDENTITY"
+	codesign --force --deep --sign "$MACOS_SIGN_IDENTITY" \
+		--options runtime \
+		--timestamp \
+		"$APP_BUNDLE"
+
+	# Verify signature
+	echo "Verifying signature..."
+	codesign --verify --deep --verbose=2 "$APP_BUNDLE"
+else
+	echo "WARNING: No signing identity provided - app will not be signed"
+	echo "         Set MACOS_SIGN_IDENTITY environment variable to sign the app"
+fi
+
+echo "App bundle created successfully"
 echo "  Bundle: $APP_BUNDLE"
 echo "  Binary: $MACOS/airdash"
 echo "  Info.plist: $CONTENTS/Info.plist"
