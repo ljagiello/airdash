@@ -36,10 +36,10 @@ var (
 	httpClient = &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	ErrBadPayload = errors.New("Error unmarshalling JSON")
+	ErrBadPayload = errors.New("error unmarshalling JSON")
 )
 
-// getAirGradientAPIURL returns the AirGradient API URL
+// getAirGradientAPIURL returns the AirGradient API URL.
 func getAirGradientAPIURL(locationID int) string {
 	if locationID != 0 {
 		return fmt.Sprintf("https://api.airgradient.com/public/api/v1/locations/%d/measures/current", locationID)
@@ -48,8 +48,8 @@ func getAirGradientAPIURL(locationID int) string {
 }
 
 // convertTemperature converts the temperature from Celsius to Fahrenheit if the
-// temperature unit is set to Fahrenheit
-// By default the temperature unit is Celsius
+// temperature unit is set to Fahrenheit.
+// By default the temperature unit is Celsius.
 func convertTemperature(temperature float64, tempUnit string) float64 {
 	if tempUnit == "F" {
 		return (temperature * 9 / 5) + 32
@@ -57,8 +57,8 @@ func convertTemperature(temperature float64, tempUnit string) float64 {
 	return temperature
 }
 
-// fetchMeasures fetches the measures from the AirGradient API
-func fetchMeasures(airGradientAPIUrl string, token string) ([]byte, error) {
+// fetchMeasures fetches the measures from the AirGradient API.
+func fetchMeasures(airGradientAPIUrl, token string) ([]byte, error) {
 	req, err := http.NewRequest("GET", airGradientAPIUrl, nil)
 	if err != nil {
 		logger.Error("Creating HTTP request", "error", err)
@@ -74,7 +74,11 @@ func fetchMeasures(airGradientAPIUrl string, token string) ([]byte, error) {
 		logger.Error("Sending HTTP request", "error", err)
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			logger.Error("Closing response body", "error", closeErr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		logger.Error("HTTP request failed", "status", resp.StatusCode)
@@ -90,7 +94,7 @@ func fetchMeasures(airGradientAPIUrl string, token string) ([]byte, error) {
 	return body, nil
 }
 
-func getAirGradientMeasures(airGradientAPIUrl string, token string) (AirGradientMeasures, error) {
+func getAirGradientMeasures(airGradientAPIUrl, token string) (AirGradientMeasures, error) {
 	var measures AirGradientMeasures
 	payload, err := fetchMeasures(airGradientAPIUrl, token)
 	if err != nil {

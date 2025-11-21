@@ -14,7 +14,7 @@ type Config struct {
 	TempUnit   string `yaml:"tempUnit"`
 }
 
-// LoadConfig loads the config from the given path
+// LoadConfig loads the config from the given path.
 func LoadConfig(path string) (*Config, error) {
 	f, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
