@@ -78,11 +78,11 @@ if [ -n "$MACOS_SIGN_IDENTITY" ]; then
 	echo "Verifying signature..."
 	codesign --verify --deep --verbose=2 "$APP_BUNDLE"
 else
-	echo "⚠️  No signing identity provided - app will not be signed"
-	echo "   Set MACOS_SIGN_IDENTITY environment variable to sign the app"
+	echo "WARNING: No signing identity provided - app will not be signed"
+	echo "         Set MACOS_SIGN_IDENTITY environment variable to sign the app"
 fi
 
-echo "✓ App bundle created successfully"
+echo "App bundle created successfully"
 echo "  Bundle: $APP_BUNDLE"
 echo "  Binary: $MACOS/airdash"
 echo "  Info.plist: $CONTENTS/Info.plist"

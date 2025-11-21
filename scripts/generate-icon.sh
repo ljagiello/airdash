@@ -80,4 +80,4 @@ iconutil -c icns "$ICONSET_DIR" -o "$OUTPUT_ICNS"
 # Clean up
 rm -rf "$(dirname $ICONSET_DIR)"
 
-echo "✓ Icon created successfully: $OUTPUT_ICNS"
+echo "Icon created successfully: $OUTPUT_ICNS"
