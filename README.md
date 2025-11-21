@@ -14,8 +14,6 @@
 - Auto-refresh every 60 seconds (configurable)
 - Clean, minimal menu bar interface
 - Background daemon mode with automatic installation
-- About window with version info and GitHub link
-- Signed and notarized for macOS security
 - Native macOS app using AppKit
 
 ## Requirements
@@ -33,8 +31,6 @@
 3. Drag `AirDash.app` to the Applications folder
 4. Launch AirDash from Applications
 5. On first launch, it automatically installs itself as a background service
-
-The app is signed and notarized - macOS will trust it automatically.
 
 ### Option 2: Standalone Binary
 
@@ -168,7 +164,7 @@ log show --predicate 'process == "airdash"' --info --last 1h
 
 ### App won't open or shows security warning
 
-The app is signed and notarized. If you see a security warning:
+If you see a security warning:
 1. Right-click the app and select **Open**
 2. Click **Open** in the security dialog
 3. Alternatively: System Settings → Privacy & Security → Allow
