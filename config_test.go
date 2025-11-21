@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -26,7 +25,7 @@ func CreateTestConfig(configContent []byte) (*os.File, error) {
 }
 
 func TestLoadConfig(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name          string
 		configContent []byte
 		token         string
@@ -37,7 +36,7 @@ func TestLoadConfig(t *testing.T) {
 	}{
 		{
 			"full-token",
-			[]byte(fmt.Sprintf("token: \"1234567890\"\nlocationId: 0\ninterval: 60\ntempUnit: \"C\"")),
+			[]byte("token: \"1234567890\"\nlocationId: 0\ninterval: 60\ntempUnit: \"C\""),
 			"1234567890",
 			0,
 			60,
@@ -46,7 +45,7 @@ func TestLoadConfig(t *testing.T) {
 		},
 		{
 			"missing-interval",
-			[]byte(fmt.Sprintf("token: \"1234567890\"\ntempUnit: \"F\"")),
+			[]byte("token: \"1234567890\"\ntempUnit: \"F\""),
 			"1234567890",
 			0,
 			0,
@@ -60,14 +59,15 @@ func TestLoadConfig(t *testing.T) {
 			0,
 			0,
 			"",
-			&yaml.TypeError{Errors: []string{"line 1: cannot unmarshal !!str `foobar-...` into main.Config"}}},
+			&yaml.TypeError{Errors: []string{"line 1: cannot unmarshal !!str `foobar-...` into main.Config"}},
+		},
 	}
 
 	for _, tC := range testCases {
 		t.Run(tC.name, func(t *testing.T) {
 			tempFile, err := CreateTestConfig(tC.configContent)
 			require.NoError(t, err)
-			defer os.Remove(tempFile.Name())
+			defer func() { _ = os.Remove(tempFile.Name()) }()
 
 			cfg, err := LoadConfig(tempFile.Name())
 			if err == nil {

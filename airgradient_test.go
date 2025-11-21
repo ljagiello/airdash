@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetAirGradientAPIURL(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name        string
 		locationID  int
 		expectedURL string
@@ -34,7 +34,7 @@ func TestGetAirGradientAPIURL(t *testing.T) {
 }
 
 func TestConvertTemp(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name     string
 		temp     float64
 		tempUnit string
@@ -61,7 +61,7 @@ func TestConvertTemp(t *testing.T) {
 }
 
 func TestGetAirGradientMeasures(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name        string
 		payloadFile string
 		err         error
