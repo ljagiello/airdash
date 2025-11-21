@@ -67,6 +67,8 @@ release:
   draft: false
   prerelease: auto
   mode: replace
+  extra_files:
+    - glob: dist/*/AirDash-*.dmg
   header: |
     ## AirDash {{ .Tag }} Release
 
