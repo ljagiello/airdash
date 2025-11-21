@@ -22,7 +22,7 @@ var (
 
 var aboutWindow objc.Object
 
-//go:embed assets/logo.svg
+//go:embed assets/app/logo.svg
 var logoSVG []byte
 
 func showAboutWindow() {

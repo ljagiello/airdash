@@ -58,9 +58,9 @@ cat > "$CONTENTS/Info.plist" <<EOF
 EOF
 
 # Copy logo if it exists (optional)
-if [ -f "assets/logo.png" ]; then
+if [ -f "assets/app/logo.png" ]; then
 	echo "Copying logo to Resources"
-	cp "assets/logo.png" "$RESOURCES/"
+	cp "assets/app/logo.png" "$RESOURCES/"
 fi
 
 echo "✓ App bundle created successfully"

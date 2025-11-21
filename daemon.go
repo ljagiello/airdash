@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-//go:embed assets/com.github.ljagiello.airdash.plist
+//go:embed assets/launchd/com.github.ljagiello.airdash.plist
 var plistTemplate string
 
 const (
