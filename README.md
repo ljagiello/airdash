@@ -104,42 +104,6 @@ tempUnit: F
 2. **Install daemon:** `./airdash install` - sets up automatic background service
 3. **Uninstall:** `./airdash uninstall` - removes background service
 
-### Daemon Mode
-
-AirDash runs as a LaunchAgent that continuously monitors air quality in the background.
-
-**Features:**
-- Fetches data at your configured interval
-- Logs measurements in JSON format
-- Automatically restarts if it crashes
-- Starts automatically at login
-
-**Managing the Daemon:**
-
-```bash
-# Check status
-launchctl list | grep airdash
-
-# View logs
-tail -f ~/Library/Logs/airdash.log
-
-# View errors
-tail -f ~/Library/Logs/airdash.error.log
-
-# Manual uninstall
-./airdash uninstall
-# Or for app bundle:
-/Applications/AirDash.app/Contents/MacOS/airdash uninstall
-```
-
-**File Locations:**
-- App: `/Applications/AirDash.app` (DMG install)
-- Binary: `~/.local/bin/airdash` (standalone install)
-- LaunchAgent: `~/Library/LaunchAgents/com.github.ljagiello.airdash.plist`
-- Logs: `~/Library/Logs/airdash.log`
-- Errors: `~/Library/Logs/airdash.error.log`
-- Config: `~/.airdash/config.yaml`
-
 ## Troubleshooting
 
 ### No measurements showing
