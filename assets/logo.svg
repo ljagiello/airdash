@@ -1,0 +1,28 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tile background -->
+  <rect x="16" y="16" width="224" height="224" rx="56" fill="#F5FAFF" />
+
+  <!-- Air arc -->
+  <defs>
+    <linearGradient id="airdashArc" x1="40" y1="80" x2="216" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1BB2A5" />
+      <stop offset="1" stop-color="#2C6AE8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Sensor dot -->
+  <circle cx="60" cy="120" r="10" fill="#1BB2A5" />
+
+  <!-- Arc path (adjust control points visually later) -->
+  <path d="M60 120 C 100 60, 180 60, 200 90"
+        fill="none"
+        stroke="url(#airdashArc)"
+        stroke-width="10"
+        stroke-linecap="round" />
+
+  <!-- Bars -->
+  <rect x="70"  y="170" width="26" height="50" rx="6" fill="#4CAF50" />
+  <rect x="110" y="155" width="26" height="65" rx="6" fill="#FFC107" />
+  <rect x="150" y="135" width="26" height="85" rx="6" fill="#FF9800" />
+  <rect x="190" y="145" width="26" height="75" rx="6" fill="#F44336" />
+</svg>

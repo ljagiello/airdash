@@ -1,12 +1,14 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/progrium/darwinkit/dispatch"
+	"github.com/progrium/darwinkit/helper/action"
 	"github.com/progrium/darwinkit/macos/appkit"
 	"github.com/progrium/darwinkit/macos/foundation"
 	"github.com/progrium/darwinkit/objc"
@@ -19,7 +21,9 @@ var (
 )
 
 var aboutWindow objc.Object
-var aboutMenuCallback func(objc.Object, objc.Selector, objc.Object) // Prevent GC
+
+//go:embed assets/logo.svg
+var logoSVG []byte
 
 func showAboutWindow() {
 	// If window already exists, just bring it to front
@@ -30,10 +34,10 @@ func showAboutWindow() {
 		return
 	}
 
-	// Create window
+	// Create window - more compact
 	rect := foundation.Rect{
 		Origin: foundation.Point{X: 0, Y: 0},
-		Size:   foundation.Size{Width: 400, Height: 200},
+		Size:   foundation.Size{Width: 400, Height: 340},
 	}
 
 	window := appkit.NewWindowWithContentRectStyleMaskBackingDefer(
@@ -43,64 +47,103 @@ func showAboutWindow() {
 		false,
 	)
 	window.SetTitle("About AirDash")
+	window.SetReleasedWhenClosed(false) // Keep window in memory when closed
 	window.Center()
 
 	// Create content view
 	contentView := window.ContentView()
 
-	// App name label
+	// Load SVG logo - smaller size
+	logoImage := appkit.NewImageWithData(logoSVG)
+
+	// Create image view for logo
+	logoView := appkit.NewImageView()
+	logoView.SetImage(logoImage)
+	logoView.SetFrame(foundation.Rect{
+		Origin: foundation.Point{X: 150, Y: 230},
+		Size:   foundation.Size{Width: 100, Height: 100},
+	})
+	contentView.AddSubview(logoView)
+
+	// App name label - centered, larger, bold
 	nameLabel := appkit.NewTextField()
 	nameLabel.SetStringValue("AirDash")
 	nameLabel.SetEditable(false)
 	nameLabel.SetBordered(false)
 	nameLabel.SetDrawsBackground(false)
-	nameLabel.SetFont(appkit.Font_SystemFontOfSize(18))
+	nameLabel.SetFont(appkit.Font_BoldSystemFontOfSize(28))
+	nameLabel.SetAlignment(appkit.TextAlignmentCenter)
 	nameLabel.SetFrame(foundation.Rect{
-		Origin: foundation.Point{X: 20, Y: 140},
-		Size:   foundation.Size{Width: 360, Height: 30},
+		Origin: foundation.Point{X: 0, Y: 185},
+		Size:   foundation.Size{Width: 400, Height: 35},
 	})
 	contentView.AddSubview(nameLabel)
 
-	// Version label
+	// Version label - centered, tighter spacing
 	versionLabel := appkit.NewTextField()
-	versionLabel.SetStringValue(fmt.Sprintf("Version: %s", version))
+	versionLabel.SetStringValue(fmt.Sprintf("Version  %s", version))
 	versionLabel.SetEditable(false)
 	versionLabel.SetBordered(false)
 	versionLabel.SetDrawsBackground(false)
 	versionLabel.SetFont(appkit.Font_SystemFontOfSize(13))
+	versionLabel.SetAlignment(appkit.TextAlignmentCenter)
 	versionLabel.SetFrame(foundation.Rect{
-		Origin: foundation.Point{X: 20, Y: 100},
-		Size:   foundation.Size{Width: 360, Height: 20},
+		Origin: foundation.Point{X: 0, Y: 140},
+		Size:   foundation.Size{Width: 400, Height: 18},
 	})
 	contentView.AddSubview(versionLabel)
 
-	// Commit label
+	// Build label - centered, tighter spacing
+	buildLabel := appkit.NewTextField()
+	buildLabel.SetStringValue(fmt.Sprintf("Build  %s", date))
+	buildLabel.SetEditable(false)
+	buildLabel.SetBordered(false)
+	buildLabel.SetDrawsBackground(false)
+	buildLabel.SetFont(appkit.Font_SystemFontOfSize(13))
+	buildLabel.SetAlignment(appkit.TextAlignmentCenter)
+	buildLabel.SetFrame(foundation.Rect{
+		Origin: foundation.Point{X: 0, Y: 120},
+		Size:   foundation.Size{Width: 400, Height: 18},
+	})
+	contentView.AddSubview(buildLabel)
+
+	// Commit label - centered, tighter spacing
 	commitLabel := appkit.NewTextField()
-	commitLabel.SetStringValue(fmt.Sprintf("Commit: %s", commit))
+	commitLabel.SetStringValue(fmt.Sprintf("Commit  %s", commit))
 	commitLabel.SetEditable(false)
 	commitLabel.SetBordered(false)
 	commitLabel.SetDrawsBackground(false)
-	commitLabel.SetFont(appkit.Font_SystemFontOfSize(11))
+	commitLabel.SetFont(appkit.Font_SystemFontOfSize(13))
+	commitLabel.SetAlignment(appkit.TextAlignmentCenter)
+	commitLabel.SetTextColor(appkit.Color_LinkColor())
 	commitLabel.SetFrame(foundation.Rect{
-		Origin: foundation.Point{X: 20, Y: 70},
-		Size:   foundation.Size{Width: 360, Height: 20},
+		Origin: foundation.Point{X: 0, Y: 100},
+		Size:   foundation.Size{Width: 400, Height: 18},
 	})
 	contentView.AddSubview(commitLabel)
 
-	// Build date label
-	dateLabel := appkit.NewTextField()
-	dateLabel.SetStringValue(fmt.Sprintf("Built: %s", date))
-	dateLabel.SetEditable(false)
-	dateLabel.SetBordered(false)
-	dateLabel.SetDrawsBackground(false)
-	dateLabel.SetFont(appkit.Font_SystemFontOfSize(11))
-	dateLabel.SetFrame(foundation.Rect{
-		Origin: foundation.Point{X: 20, Y: 40},
-		Size:   foundation.Size{Width: 360, Height: 20},
+	// GitHub button - centered
+	githubButton := appkit.Button_ButtonWithTitleTargetAction("GitHub", nil, objc.Selector{})
+	githubButton.SetBezelStyle(appkit.BezelStyleRounded)
+	githubButton.SetFrame(foundation.Rect{
+		Origin: foundation.Point{X: 150, Y: 40},
+		Size:   foundation.Size{Width: 100, Height: 32},
 	})
-	contentView.AddSubview(dateLabel)
+
+	// Set button action to open GitHub URL
+	githubButton.SetTarget(githubButton.Object)
+	githubButton.SetAction(objc.Sel("performAction:"))
+
+	// Use action helper to handle click
+	action.Set(githubButton, func(sender objc.Object) {
+		url := foundation.URL_URLWithString("https://github.com/ljagiello/airdash")
+		appkit.Workspace_SharedWorkspace().OpenURL(url)
+	})
+
+	contentView.AddSubview(githubButton)
 
 	aboutWindow = window.Object
+	objc.Retain(&aboutWindow) // Retain to prevent deallocation
 	window.MakeKeyAndOrderFront(nil)
 	appkit.Application_SharedApplication().ActivateIgnoringOtherApps(true)
 }
@@ -129,88 +172,63 @@ func main() {
 	app := appkit.Application_SharedApplication()
 	app.SetActivationPolicy(appkit.ApplicationActivationPolicyAccessory)
 
-	item := appkit.StatusBar_SystemStatusBar().StatusItemWithLength(-1)
-	objc.Retain(&item)
-	item.Button().SetTitle("🔄 AirDash")
+	// Schedule UI setup to run on main queue after app.Run() starts
+	dispatch.MainQueue().DispatchAsync(func() {
+		item := appkit.StatusBar_SystemStatusBar().StatusItemWithLength(-1)
+		objc.Retain(&item)
 
-	updateStatus := func() {
-		measures, err := getAirGradientMeasures(airGradientAPIURL, cfg.Token)
-		if err != nil {
-			logger.Error("Fetching measures", "error", err)
-			return
+		updateStatus := func() {
+			measures, err := getAirGradientMeasures(airGradientAPIURL, cfg.Token)
+			if err != nil {
+				logger.Error("Fetching measures", "error", err)
+				return
+			}
+			logger.Debug("AirGradientMeasures", "measures", measures)
+
+			// convert the temperature to the desired unit
+			temperature := convertTemperature(measures.Atmp, cfg.TempUnit)
+
+			// updates to the ui should happen on the main thread to avoid segfaults
+			dispatch.MainQueue().DispatchAsync(func() {
+				item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
+					temperature,
+					measures.Pm02,
+					measures.Rhum,
+					measures.Rco2,
+				))
+			})
 		}
-		logger.Debug("AirGradientMeasures", "measures", measures)
 
-		// convert the temperature to the desired unit
-		temperature := convertTemperature(measures.Atmp, cfg.TempUnit)
-
-		// updates to the ui should happen on the main thread to avoid segfaults
-		dispatch.MainQueue().DispatchAsync(func() {
-			item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
-				temperature,
-				measures.Pm02,
-				measures.Rhum,
-				measures.Rco2,
-			))
-		})
-	}
-
-	go func() {
-		// Fetch data immediately on startup
-		updateStatus()
-
-		ticker := time.NewTicker(time.Duration(cfg.Interval) * time.Second)
-		defer ticker.Stop()
-
-		// Continue fetching at regular intervals
-		for range ticker.C {
+		go func() {
+			// Fetch data immediately on startup
 			updateStatus()
-		}
-	}()
 
-	// Create About menu item with callback
-	itemAbout := appkit.NewMenuItem()
-	itemAbout.SetTitle("About AirDash")
+			ticker := time.NewTicker(time.Duration(cfg.Interval) * time.Second)
+			defer ticker.Stop()
 
-	// Create custom handler class - check if it already exists first
-	className := "AirDashAboutHandler"
-	handlerClass := objc.GetClass(className)
+			// Continue fetching at regular intervals
+			for range ticker.C {
+				updateStatus()
+			}
+		}()
 
-	if handlerClass.Ptr() == nil {
-		// Class doesn't exist, create it
-		handlerClass = objc.AllocateClass(objc.GetClass("NSObject"), className, 0)
-
-		// Store callback in global variable to prevent garbage collection
-		aboutMenuCallback = func(self objc.Object, cmd objc.Selector, sender objc.Object) {
+		// Create About menu item with callback
+		itemAbout := appkit.NewMenuItemWithAction("About AirDash", "", func(sender objc.Object) {
 			showAboutWindow()
-		}
+		})
 
-		// Add method BEFORE registering the class
-		objc.AddMethod(handlerClass, objc.Sel("showAbout:"), aboutMenuCallback)
+		// Create Quit menu item
+		itemQuit := appkit.NewMenuItem()
+		itemQuit.SetTitle("Quit")
+		itemQuit.SetAction(objc.Sel("terminate:"))
 
-		// Now register the class
-		objc.RegisterClass(handlerClass)
-	}
-
-	// Create instance of our handler class
-	handler := objc.Call[objc.Object](handlerClass, objc.Sel("alloc"))
-	handler = objc.Call[objc.Object](handler, objc.Sel("init"))
-	objc.Retain(&handler)
-
-	itemAbout.SetTarget(handler)
-	itemAbout.SetAction(objc.Sel("showAbout:"))
-
-	// Create Quit menu item
-	itemQuit := appkit.NewMenuItem()
-	itemQuit.SetTitle("Quit")
-	itemQuit.SetAction(objc.Sel("terminate:"))
-
-	// Build menu
-	menu := appkit.NewMenu()
-	menu.AddItem(itemAbout)
-	menu.AddItem(appkit.MenuItem_SeparatorItem())
-	menu.AddItem(itemQuit)
-	item.SetMenu(menu)
+		// Build menu
+		menu := appkit.NewMenu()
+		menu.AddItem(itemAbout)
+		menu.AddItem(appkit.MenuItem_SeparatorItem())
+		menu.AddItem(itemQuit)
+		item.SetMenu(menu)
+	})
 
 	app.Run()
 }
