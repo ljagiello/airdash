@@ -172,7 +172,6 @@ func main() {
 
 	// Parse flags
 	configPath := flag.String("config", getDefaultConfigPath(), "path to config file")
-	daemon := flag.Bool("daemon", false, "run in daemon mode (no GUI)")
 	flag.Parse()
 
 	// Load config
@@ -187,12 +186,8 @@ func main() {
 		cfg.Interval = 60
 	}
 
-	// Run appropriate mode
-	if *daemon {
-		runDaemon(cfg)
-	} else {
-		runGUI(cfg)
-	}
+	// Run GUI
+	runGUI(cfg)
 }
 
 func runGUI(cfg *Config) {
@@ -204,15 +199,15 @@ func runGUI(cfg *Config) {
 
 	// Schedule UI setup to run on main queue after app.Run() starts
 	dispatch.MainQueue().DispatchAsync(func() {
-		// Auto-install daemon silently on first launch
+		// Auto-install LaunchAgent silently on first launch
 		if !isDaemonInstalled() {
-			logger.Info("First launch detected - installing daemon")
+			logger.Info("First launch detected - installing LaunchAgent")
 			if err := installDaemon(); err != nil {
 				// Log error but continue running in GUI mode
-				logger.Error("Failed to install daemon - running in GUI mode only", "error", err)
+				logger.Error("Failed to install LaunchAgent - running in GUI mode only", "error", err)
 			} else {
-				logger.Info("Daemon installed successfully - exiting to let launchd start daemon mode")
-				// Success - quit and let launchd start in daemon mode
+				logger.Info("LaunchAgent installed successfully - exiting to let launchd start")
+				// Success - quit and let launchd start
 				app.Terminate(nil)
 				return
 			}
@@ -275,51 +270,4 @@ func runGUI(cfg *Config) {
 	})
 
 	app.Run()
-}
-
-func runDaemon(cfg *Config) {
-	logger.Info("Starting airdash daemon",
-		"version", version,
-		"commit", commit,
-		"date", date,
-		"interval", cfg.Interval,
-	)
-
-	airGradientAPIURL := getAirGradientAPIURL(cfg.LocationID)
-
-	// Initial fetch
-	updateMeasures(cfg, airGradientAPIURL)
-
-	// Start periodic updates
-	ticker := time.NewTicker(time.Duration(cfg.Interval) * time.Second)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		updateMeasures(cfg, airGradientAPIURL)
-	}
-}
-
-func updateMeasures(cfg *Config, apiURL string) {
-	measures, err := getAirGradientMeasures(apiURL, cfg.Token)
-	if err != nil {
-		logger.Error("Fetching measures", "error", err)
-		return
-	}
-
-	temperature := convertTemperature(measures.Atmp, cfg.TempUnit)
-
-	logger.Info("Air quality data",
-		"location", measures.LocationName,
-		"locationId", measures.LocationID,
-		"temperature", fmt.Sprintf("%.2f%s", temperature, cfg.TempUnit),
-		"pm01", measures.Pm01,
-		"pm25", measures.Pm02,
-		"pm10", measures.Pm10,
-		"humidity", fmt.Sprintf("%.1f%%", measures.Rhum),
-		"co2", fmt.Sprintf("%.0f ppm", measures.Rco2),
-		"tvoc", measures.Tvoc,
-		"tvocIndex", measures.TvocIndex,
-		"noxIndex", measures.NoxIndex,
-		"timestamp", measures.Timestamp.Format(time.RFC3339),
-	)
 }
