@@ -2,9 +2,9 @@ package main
 
 import (
 	_ "embed"
+	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/progrium/darwinkit/dispatch"
@@ -149,23 +149,53 @@ func showAboutWindow() {
 }
 
 func main() {
-	// Load config first
-	homeDirectory, err := os.UserHomeDir()
+	// Handle subcommands first (install/uninstall/version)
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "install":
+			if err := installDaemon(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			return
+		case "uninstall":
+			if err := uninstallDaemon(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			return
+		case "version", "--version", "-version":
+			fmt.Printf("airdash %s (commit: %s, built: %s)\n", version, commit, date)
+			return
+		}
+	}
+
+	// Parse flags
+	configPath := flag.String("config", getDefaultConfigPath(), "path to config file")
+	daemon := flag.Bool("daemon", false, "run in daemon mode (no GUI)")
+	flag.Parse()
+
+	// Load config
+	cfg, err := LoadConfig(*configPath)
 	if err != nil {
-		logger.Error("Getting user home directory", "error", err)
+		logger.Error("Loading config", "error", err, "path", *configPath)
 		os.Exit(1)
 	}
 
-	cfg, err := LoadConfig(filepath.Join(homeDirectory, ".airdash", "config.yaml"))
-	if err != nil {
-		logger.Error("Loading config", "error", err)
-		os.Exit(1)
-	}
-
+	// Set defaults
 	if cfg.Interval == 0 {
 		cfg.Interval = 60
 	}
 
+	// Run appropriate mode
+	if *daemon {
+		runDaemon(cfg)
+	} else {
+		runGUI(cfg)
+	}
+}
+
+func runGUI(cfg *Config) {
 	airGradientAPIURL := getAirGradientAPIURL(cfg.LocationID)
 
 	// Create the app manually instead of using RunApp
@@ -174,6 +204,20 @@ func main() {
 
 	// Schedule UI setup to run on main queue after app.Run() starts
 	dispatch.MainQueue().DispatchAsync(func() {
+		// Auto-install daemon silently on first launch
+		if !isDaemonInstalled() {
+			logger.Info("First launch detected - installing daemon")
+			if err := installDaemon(); err != nil {
+				// Log error but continue running in GUI mode
+				logger.Error("Failed to install daemon - running in GUI mode only", "error", err)
+			} else {
+				logger.Info("Daemon installed successfully - exiting to let launchd start daemon mode")
+				// Success - quit and let launchd start in daemon mode
+				app.Terminate(nil)
+				return
+			}
+		}
+
 		item := appkit.StatusBar_SystemStatusBar().StatusItemWithLength(-1)
 		objc.Retain(&item)
 
@@ -231,4 +275,51 @@ func main() {
 	})
 
 	app.Run()
+}
+
+func runDaemon(cfg *Config) {
+	logger.Info("Starting airdash daemon",
+		"version", version,
+		"commit", commit,
+		"date", date,
+		"interval", cfg.Interval,
+	)
+
+	airGradientAPIURL := getAirGradientAPIURL(cfg.LocationID)
+
+	// Initial fetch
+	updateMeasures(cfg, airGradientAPIURL)
+
+	// Start periodic updates
+	ticker := time.NewTicker(time.Duration(cfg.Interval) * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		updateMeasures(cfg, airGradientAPIURL)
+	}
+}
+
+func updateMeasures(cfg *Config, apiURL string) {
+	measures, err := getAirGradientMeasures(apiURL, cfg.Token)
+	if err != nil {
+		logger.Error("Fetching measures", "error", err)
+		return
+	}
+
+	temperature := convertTemperature(measures.Atmp, cfg.TempUnit)
+
+	logger.Info("Air quality data",
+		"location", measures.LocationName,
+		"locationId", measures.LocationID,
+		"temperature", fmt.Sprintf("%.2f%s", temperature, cfg.TempUnit),
+		"pm01", measures.Pm01,
+		"pm25", measures.Pm02,
+		"pm10", measures.Pm10,
+		"humidity", fmt.Sprintf("%.1f%%", measures.Rhum),
+		"co2", fmt.Sprintf("%.0f ppm", measures.Rco2),
+		"tvoc", measures.Tvoc,
+		"tvocIndex", measures.TvocIndex,
+		"noxIndex", measures.NoxIndex,
+		"timestamp", measures.Timestamp.Format(time.RFC3339),
+	)
 }

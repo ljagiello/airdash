@@ -10,12 +10,11 @@
 
 ## Features
 
-- 🌡️ Real-time temperature, PM2.5, humidity, and CO2 levels in your menu bar
-- 🔄 Auto-refresh every 60 seconds (configurable)
-- 🎨 Clean, minimal menu bar interface
-- ℹ️ About window with version info and GitHub link
-- 🔐 Signed and notarized for macOS security
-- 🍎 Native macOS app using AppKit
+- Real-time temperature, PM2.5, humidity, and CO2 levels in your menu bar
+- Auto-refresh every 60 seconds (configurable)
+- Clean, minimal menu bar interface
+- Background daemon mode with automatic installation
+- Native macOS app using AppKit
 
 ## Requirements
 
@@ -25,21 +24,27 @@
 
 ## Installation
 
-### Download Pre-built Binary (Recommended)
+### Option 1: Download DMG (Recommended)
+
+1. Download the latest DMG from [Releases](https://github.com/ljagiello/airdash/releases/latest)
+2. Open `AirDash-{version}-arm64.dmg`
+3. Drag `AirDash.app` to the Applications folder
+4. Launch AirDash from Applications
+5. On first launch, it automatically installs itself as a background service
+
+### Option 2: Standalone Binary
 
 1. Download the latest release from [Releases](https://github.com/ljagiello/airdash/releases/latest)
 2. Extract the archive:
    ```bash
-   tar -xzf airdash_0.0.1_darwin_arm64.tar.gz
+   tar -xzf airdash_{version}_darwin_arm64.tar.gz
    ```
 3. Run the binary:
    ```bash
    ./airdash
    ```
 
-The binary is signed and notarized - macOS will trust it automatically.
-
-### Build from Source
+### Option 3: Build from Source
 
 ```bash
 git clone https://github.com/ljagiello/airdash.git
@@ -86,18 +91,18 @@ tempUnit: F
 
 ## Usage
 
-1. **Start AirDash:**
-   ```bash
-   ./airdash
-   ```
+### DMG Installation
 
-2. **Menu Bar:** Look for your current measurements displayed in the menu bar
+1. **First Launch:** After dragging to Applications and launching, AirDash automatically installs itself as a background service
+2. **Background Operation:** The app runs continuously in the background, fetching air quality data
+3. **No GUI Required:** Once installed, the daemon runs headlessly - no menu bar needed
+4. **Automatic Startup:** Starts automatically when you log in
 
-3. **Menu Options:**
-   - **About AirDash**: View version, build info, and GitHub link
-   - **Quit**: Exit the application
+### Standalone Binary
 
-The app runs in the background and updates automatically. It will fetch data immediately on startup and then refresh based on your configured interval.
+1. **Run once:** `./airdash` - runs in GUI mode with menu bar
+2. **Install daemon:** `./airdash install` - sets up automatic background service
+3. **Uninstall:** `./airdash uninstall` - removes background service
 
 ## Troubleshooting
 
@@ -123,7 +128,7 @@ log show --predicate 'process == "airdash"' --info --last 1h
 
 ### App won't open or shows security warning
 
-The app is signed and notarized. If you see a security warning:
+If you see a security warning:
 1. Right-click the app and select **Open**
 2. Click **Open** in the security dialog
 3. Alternatively: System Settings → Privacy & Security → Allow
@@ -145,6 +150,43 @@ If you see HTTP errors in logs:
 - Check for updates: [Releases](https://github.com/ljagiello/airdash/releases)
 - Report issues with crash logs: [GitHub Issues](https://github.com/ljagiello/airdash/issues)
 
+### Daemon not starting or stopping unexpectedly
+
+**Check daemon status:**
+```bash
+launchctl list | grep airdash
+```
+
+**View daemon logs:**
+```bash
+# View recent logs
+tail -50 ~/Library/Logs/airdash.log
+
+# View errors
+tail -50 ~/Library/Logs/airdash.error.log
+
+# Monitor logs in real-time
+tail -f ~/Library/Logs/airdash.log
+```
+
+**Manually restart daemon:**
+```bash
+launchctl stop com.github.ljagiello.airdash
+launchctl start com.github.ljagiello.airdash
+```
+
+**Reinstall daemon:**
+```bash
+./airdash uninstall
+./airdash install
+```
+
+**Common daemon issues:**
+- Config file missing or invalid - check `~/.airdash/config.yaml`
+- API token expired - update your token in config
+- Network connectivity issues - check internet connection
+- Binary moved or deleted - reinstall daemon
+
 ## Development
 
 ### Local Development
@@ -157,30 +199,11 @@ cd airdash
 # Install dependencies
 go mod download
 
-# Run tests
-go test -v ./...
-
-# Run linter
-golangci-lint run
-
 # Build locally
 go build -o airdash .
 
 # Run
 ./airdash
-```
-
-### Project Structure
-
-```
-airdash/
-├── main.go           # macOS UI and app entry point
-├── airgradient.go    # AirGradient API client
-├── config.go         # Configuration loading
-├── log.go            # Structured logging
-├── assets/           # Embedded assets (logo)
-├── testdata/         # Test fixtures
-└── .github/          # CI/CD workflows
 ```
 
 ### Running Tests with Coverage
@@ -189,39 +212,6 @@ airdash/
 go test -v -race -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
 ```
-
-### Creating a Release
-
-Releases are automated via GitHub Actions. To create a new release:
-
-1. Ensure all changes are committed and pushed to `main`
-2. Create and push a version tag:
-   ```bash
-   git tag -a v0.0.2 -m "Release v0.0.2"
-   git push origin v0.0.2
-   ```
-
-The GitHub Actions workflow will automatically:
-- Build the arm64 binary
-- Sign with Apple Developer ID
-- Notarize with Apple
-- Create a GitHub release with downloadable artifacts
-
-**Release workflow:** `.github/workflows/release.yml`
-
-### Required GitHub Secrets (for maintainers)
-
-For signing and notarization, configure these secrets in your repository:
-
-| Secret | Description |
-|--------|-------------|
-| `MACOS_SIGN_P12_BASE64` | Base64-encoded Developer ID certificate (.p12) |
-| `MACOS_SIGN_PASSWORD` | Password for the .p12 certificate |
-| `MACOS_NOTARY_KEY_BASE64` | Base64-encoded App Store Connect API key (.p8) |
-| `MACOS_NOTARY_KEY_ID` | App Store Connect API Key ID |
-| `MACOS_NOTARY_ISSUER_ID` | App Store Connect Issuer ID (UUID) |
-
-See [Apple Developer documentation](https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution) for details on obtaining certificates and keys.
 
 ## API
 
