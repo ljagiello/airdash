@@ -22,7 +22,7 @@ builds:
       post:
         - cmd: ./scripts/create-app-bundle.sh {{ .Path }} {{ .Version }}
           output: true
-        - cmd: ./scripts/create-dmg.sh dist/AirDash.app {{ .Version }}
+        - cmd: ./scripts/create-dmg.sh {{ dir .Path }}/AirDash.app {{ .Version }}
           output: true
 
 notarize:
