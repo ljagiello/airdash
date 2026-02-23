@@ -191,8 +191,6 @@ func main() {
 }
 
 func runGUI(cfg *Config) {
-	airGradientAPIURL := getAirGradientAPIURL(cfg.LocationID)
-
 	// Create the app manually instead of using RunApp
 	app := appkit.Application_SharedApplication()
 	app.SetActivationPolicy(appkit.ApplicationActivationPolicyAccessory)
@@ -217,7 +215,7 @@ func runGUI(cfg *Config) {
 		objc.Retain(&item)
 
 		updateStatus := func() {
-			measures, err := getAirGradientMeasures(airGradientAPIURL, cfg.Token)
+			measures, err := getAirGradientMeasures(cfg.LocationID, cfg.Token)
 			if err != nil {
 				logger.Error("Fetching measures", "error", err)
 				return

@@ -32,6 +32,8 @@ type AirGradientMeasures struct {
 	NoxIndex           float64   `json:"noxIndex"`
 }
 
+const airGradientAPIBaseURL = "https://api.airgradient.com/public/api/v1"
+
 var (
 	httpClient = &http.Client{
 		Timeout: 10 * time.Second,
@@ -42,9 +44,9 @@ var (
 // getAirGradientAPIURL returns the AirGradient API URL.
 func getAirGradientAPIURL(locationID int) string {
 	if locationID != 0 {
-		return fmt.Sprintf("https://api.airgradient.com/public/api/v1/locations/%d/measures/current", locationID)
+		return fmt.Sprintf("%s/locations/%d/measures/current", airGradientAPIBaseURL, locationID)
 	}
-	return "https://api.airgradient.com/public/api/v1/locations/measures/current"
+	return fmt.Sprintf("%s/locations/measures/current", airGradientAPIBaseURL)
 }
 
 // convertTemperature converts the temperature from Celsius to Fahrenheit if the
@@ -58,8 +60,9 @@ func convertTemperature(temperature float64, tempUnit string) float64 {
 }
 
 // fetchMeasures fetches the measures from the AirGradient API.
-func fetchMeasures(airGradientAPIUrl, token string) ([]byte, error) {
-	req, err := http.NewRequest("GET", airGradientAPIUrl, nil)
+func fetchMeasures(locationID int, token string) ([]byte, error) {
+	apiURL := getAirGradientAPIURL(locationID)
+	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
 		logger.Error("Creating HTTP request", "error", err)
 		return nil, err
@@ -94,9 +97,9 @@ func fetchMeasures(airGradientAPIUrl, token string) ([]byte, error) {
 	return body, nil
 }
 
-func getAirGradientMeasures(airGradientAPIUrl, token string) (AirGradientMeasures, error) {
+func getAirGradientMeasures(locationID int, token string) (AirGradientMeasures, error) {
 	var measures AirGradientMeasures
-	payload, err := fetchMeasures(airGradientAPIUrl, token)
+	payload, err := fetchMeasures(locationID, token)
 	if err != nil {
 		return measures, err
 	}

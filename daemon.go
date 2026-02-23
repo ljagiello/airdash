@@ -204,7 +204,7 @@ func uninstallDaemon() error {
 
 // copyFile copies a file from src to dst.
 func copyFile(src, dst string) error {
-	sourceFile, err := os.Open(src) //nolint:gosec // Intentional file read from validated path
+	sourceFile, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("opening source file: %w", err)
 	}
@@ -214,7 +214,7 @@ func copyFile(src, dst string) error {
 		}
 	}()
 
-	destFile, err := os.Create(dst) //nolint:gosec // Intentional file write to validated path
+	destFile, err := os.Create(dst)
 	if err != nil {
 		return fmt.Errorf("creating destination file: %w", err)
 	}

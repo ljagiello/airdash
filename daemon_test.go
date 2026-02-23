@@ -70,7 +70,7 @@ func TestCopyFile(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify destination exists and has same content
-	dstContent, err := os.ReadFile(dstPath) //nolint:gosec // Test file read
+	dstContent, err := os.ReadFile(dstPath)
 	require.NoError(t, err)
 	assert.Equal(t, testContent, dstContent)
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,19 +10,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func CreateTestConfig(configContent []byte) (*os.File, error) {
-	tmpfile, err := os.CreateTemp("", "*-pass")
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := tmpfile.Write(configContent); err != nil {
-		return nil, err
-	}
-	if err := tmpfile.Close(); err != nil {
-		return nil, err
-	}
-	return tmpfile, nil
+func CreateTestConfig(t *testing.T, configContent []byte) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "config.yml")
+	require.NoError(t, os.WriteFile(path, configContent, 0o600))
+	return path
 }
 
 func TestLoadConfig(t *testing.T) {
@@ -65,11 +58,9 @@ func TestLoadConfig(t *testing.T) {
 
 	for _, tC := range testCases {
 		t.Run(tC.name, func(t *testing.T) {
-			tempFile, err := CreateTestConfig(tC.configContent)
-			require.NoError(t, err)
-			defer func() { _ = os.Remove(tempFile.Name()) }()
+			configPath := CreateTestConfig(t, tC.configContent)
 
-			cfg, err := LoadConfig(tempFile.Name())
+			cfg, err := LoadConfig(configPath)
 			if err == nil {
 				assert.Equal(t, tC.token, cfg.Token)
 				assert.Equal(t, tC.locationID, cfg.LocationID)
