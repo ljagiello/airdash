@@ -4,10 +4,23 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+// testTransport redirects all requests to the test server.
+type testTransport struct {
+	serverURL string
+}
+
+func (t *testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	target, _ := url.Parse(t.serverURL)
+	req.URL.Scheme = target.Scheme
+	req.URL.Host = target.Host
+	return http.DefaultTransport.RoundTrip(req)
+}
 
 func TestGetAirGradientAPIURL(t *testing.T) {
 	testCases := []struct {
@@ -95,7 +108,13 @@ func TestGetAirGradientMeasures(t *testing.T) {
 			}))
 			defer server.Close()
 
-			_, err := getAirGradientMeasures(server.URL, "SECRET-TOKEN")
+			originalClient := httpClient
+			httpClient = &http.Client{
+				Transport: &testTransport{serverURL: server.URL},
+			}
+			defer func() { httpClient = originalClient }()
+
+			_, err := getAirGradientMeasures(0, "SECRET-TOKEN")
 			assert.Equal(t, tC.err, err)
 		})
 	}
