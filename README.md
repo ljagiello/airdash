@@ -10,9 +10,10 @@
 
 ## Features
 
-- Real-time temperature, PM2.5, humidity, and CO2 levels in your menu bar
+- Real-time temperature, PM2.5, humidity, CO2, and heat index in your menu bar
+- Monochrome template icons in three styles (Solid, Hairline, Labels) that adapt to light/dark mode and menu bar tinting
+- Settings window (⌘,) with live preview: pick which metrics to show, icon style, and value formatting — changes apply instantly
 - Auto-refresh every 60 seconds (configurable)
-- Clean, minimal menu bar interface
 - Background daemon mode with automatic installation
 - Native macOS app using AppKit
 
@@ -89,14 +90,45 @@ tempUnit: F
 | `interval` | int | `60` | Update interval in seconds |
 | `tempUnit` | string | `"C"` | Temperature unit: "C" or "F" |
 
+## Display Settings
+
+Click the AirDash menu bar item and choose **Settings…** (⌘,) to open the settings
+window, or use the **Icon Style** submenu as a quick path for switching styles.
+
+### Icon styles
+
+| Style | Preview |
+|-------|---------|
+| **Solid** (default) | ![Solid](assets/docs/preview-solid.png) |
+| **Hairline** | ![Hairline](assets/docs/preview-hairline.png) |
+| **Labels** | ![Labels](assets/docs/preview-labels.png) |
+
+All glyphs are template images, so macOS tints them automatically for light/dark
+mode and menu bar highlighting.
+
+### Settings window
+
+- **Preview** — a live strip showing exactly how the menu bar will look
+- **Icon Style** — Solid, Hairline, or Labels (typographic, no pictograms)
+- **Show in Menu Bar** — toggle each metric individually; the heat index
+  (computed from temperature and humidity using the NOAA formula) is off by
+  default. Hidden metrics stay readable in the dropdown menu.
+- **Round Values** — one decimal for temperatures, whole numbers elsewhere
+  (keeps the bar from jittering on refresh)
+- **Monospaced Digits** — tabular figures so the bar width stays stable
+- **Launch at Login** — installs/removes the LaunchAgent
+
+Changes apply immediately — there is no save button. **Reset** restores the
+defaults. Display settings persist in macOS user defaults, separately from
+`config.yaml` (which only holds the connection settings above).
+
 ## Usage
 
 ### DMG Installation
 
 1. **First Launch:** After dragging to Applications and launching, AirDash automatically installs itself as a background service
-2. **Background Operation:** The app runs continuously in the background, fetching air quality data
-3. **No GUI Required:** Once installed, the daemon runs headlessly - no menu bar needed
-4. **Automatic Startup:** Starts automatically when you log in
+2. **Background Operation:** The app runs continuously via launchd, fetching air quality data and showing it in the menu bar
+3. **Automatic Startup:** Starts automatically when you log in (toggleable in Settings)
 
 ### Standalone Binary
 

@@ -211,8 +211,7 @@ func runGUI(cfg *Config) {
 			}
 		}
 
-		item := appkit.StatusBar_SystemStatusBar().StatusItemWithLength(-1)
-		objc.Retain(&item)
+		bar := newStatusBar(cfg)
 
 		updateStatus := func() {
 			measures, err := getAirGradientMeasures(cfg.LocationID, cfg.Token)
@@ -222,17 +221,9 @@ func runGUI(cfg *Config) {
 			}
 			logger.Debug("AirGradientMeasures", "measures", measures)
 
-			// convert the temperature to the desired unit
-			temperature := convertTemperature(measures.Atmp, cfg.TempUnit)
-
 			// updates to the ui should happen on the main thread to avoid segfaults
 			dispatch.MainQueue().DispatchAsync(func() {
-				item.Button().SetTitle(fmt.Sprintf("🌡️ %.2f  💨 %.0f  💧 %.1f  🫧 %.0f",
-					temperature,
-					measures.Pm02,
-					measures.Rhum,
-					measures.Rco2,
-				))
+				bar.setMeasures(measures)
 			})
 		}
 
@@ -248,23 +239,6 @@ func runGUI(cfg *Config) {
 				updateStatus()
 			}
 		}()
-
-		// Create About menu item with callback
-		itemAbout := appkit.NewMenuItemWithAction("About AirDash", "", func(sender objc.Object) {
-			showAboutWindow()
-		})
-
-		// Create Quit menu item
-		itemQuit := appkit.NewMenuItem()
-		itemQuit.SetTitle("Quit")
-		itemQuit.SetAction(objc.Sel("terminate:"))
-
-		// Build menu
-		menu := appkit.NewMenu()
-		menu.AddItem(itemAbout)
-		menu.AddItem(appkit.MenuItem_SeparatorItem())
-		menu.AddItem(itemQuit)
-		item.SetMenu(menu)
 	})
 
 	app.Run()

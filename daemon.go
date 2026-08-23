@@ -36,34 +36,55 @@ func getInstallBinaryPath() (string, error) {
 	return filepath.Join(home, ".local", "bin", "airdash"), nil
 }
 
-// installDaemon installs airdash as a LaunchAgent.
+// installDaemon installs airdash as a LaunchAgent and starts it.
 func installDaemon() error {
+	plistPath, err := installDaemonFiles()
+	if err != nil {
+		return err
+	}
+
+	// Load the LaunchAgent
+	cmd := exec.Command("launchctl", "load", plistPath) //nolint:gosec // Intentional launchctl command with validated path
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		// Clean up plist on failure
+		_ = os.Remove(plistPath)
+		return fmt.Errorf("loading LaunchAgent with launchctl: %w\nOutput: %s", err, string(output))
+	}
+
+	return nil
+}
+
+// installDaemonFiles installs the binary and LaunchAgent plist without
+// launchctl-loading it (used by the Launch at Login toggle, where the app is
+// already running and loading would spawn a second instance).
+func installDaemonFiles() (string, error) {
 	// Get current executable path
 	currentExec, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("getting executable path: %w", err)
+		return "", fmt.Errorf("getting executable path: %w", err)
 	}
 
 	// Resolve symlinks to get real path
 	currentExec, err = filepath.EvalSymlinks(currentExec)
 	if err != nil {
-		return fmt.Errorf("resolving executable symlinks: %w", err)
+		return "", fmt.Errorf("resolving executable symlinks: %w", err)
 	}
 
 	// Check if config exists
 	configPath := getDefaultConfigPath()
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return fmt.Errorf("config file not found at %s\nPlease create it first - see README for instructions", configPath)
+		return "", fmt.Errorf("config file not found at %s\nPlease create it first - see README for instructions", configPath)
 	}
 
 	// Check if already installed
 	plistPath, err := getPlistPath()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if _, err := os.Stat(plistPath); err == nil {
-		return fmt.Errorf("daemon already installed\nPlist exists at: %s\nRun 'airdash uninstall' first to reinstall", plistPath)
+		return "", fmt.Errorf("daemon already installed\nPlist exists at: %s\nRun 'airdash uninstall' first to reinstall", plistPath)
 	}
 
 	// Determine installation path
@@ -76,23 +97,23 @@ func installDaemon() error {
 		// Running from standalone binary - copy to ~/.local/bin
 		installPath, err = getInstallBinaryPath()
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		// Create ~/.local/bin directory if it doesn't exist
 		installDir := filepath.Dir(installPath)
 		if err := os.MkdirAll(installDir, 0o755); err != nil { //nolint:gosec // Standard macOS directory permissions
-			return fmt.Errorf("creating install directory %s: %w", installDir, err)
+			return "", fmt.Errorf("creating install directory %s: %w", installDir, err)
 		}
 
 		// Copy binary to install location
 		if err := copyFile(currentExec, installPath); err != nil {
-			return fmt.Errorf("copying binary: %w", err)
+			return "", fmt.Errorf("copying binary: %w", err)
 		}
 
 		// Make it executable
 		if err := os.Chmod(installPath, 0o755); err != nil { //nolint:gosec // Binary needs to be executable
-			return fmt.Errorf("making binary executable: %w", err)
+			return "", fmt.Errorf("making binary executable: %w", err)
 		}
 		logger.Info("Copied binary to install location", "path", installPath)
 	}
@@ -100,7 +121,7 @@ func installDaemon() error {
 	// Create LaunchAgents directory if it doesn't exist
 	launchAgentsDir := filepath.Dir(plistPath)
 	if err := os.MkdirAll(launchAgentsDir, 0o755); err != nil { //nolint:gosec // Standard macOS directory permissions
-		return fmt.Errorf("creating LaunchAgents directory: %w", err)
+		return "", fmt.Errorf("creating LaunchAgents directory: %w", err)
 	}
 
 	// Prepare log file paths
@@ -111,7 +132,7 @@ func installDaemon() error {
 
 	// Create Logs directory if it doesn't exist
 	if err := os.MkdirAll(logsDir, 0o755); err != nil { //nolint:gosec // Standard macOS directory permissions
-		return fmt.Errorf("creating Logs directory: %w", err)
+		return "", fmt.Errorf("creating Logs directory: %w", err)
 	}
 
 	// Generate plist content from template
@@ -123,24 +144,28 @@ func installDaemon() error {
 
 	// Write plist file
 	if err := os.WriteFile(plistPath, []byte(plistContent), 0o644); err != nil { //nolint:gosec // Standard macOS file permissions
-		return fmt.Errorf("writing plist file: %w", err)
+		return "", fmt.Errorf("writing plist file: %w", err)
 	}
 
-	// Load the LaunchAgent
-	cmd := exec.Command("launchctl", "load", plistPath) //nolint:gosec // Intentional launchctl command with validated path
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		// Clean up plist on failure
-		_ = os.Remove(plistPath)
-		return fmt.Errorf("loading LaunchAgent with launchctl: %w\nOutput: %s", err, string(output))
-	}
-
-	logger.Info("Daemon installed successfully",
+	logger.Info("Daemon installed",
 		"binary", installPath,
 		"plist", plistPath,
 		"logs", stdoutLog,
 	)
 
+	return plistPath, nil
+}
+
+// removeDaemonPlist removes the LaunchAgent plist so airdash no longer starts
+// at login. It deliberately skips launchctl so the running instance stays up.
+func removeDaemonPlist() error {
+	plistPath, err := getPlistPath()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(plistPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("removing plist file: %w", err)
+	}
 	return nil
 }
 
