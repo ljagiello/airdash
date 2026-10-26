@@ -235,6 +235,8 @@ Contributions are welcome! Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) 
 
 See [LICENSE](LICENSE) file for details.
 
+Created by [Lukasz Jagiello](https://lukasz.jagiello.org).
+
 ## Acknowledgments
 
 - Built with [DarwinKit](https://github.com/progrium/darwinkit) for macOS AppKit bindings
