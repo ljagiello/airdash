@@ -29,7 +29,7 @@
 1. Download the latest DMG from [Releases](https://github.com/ljagiello/airdash/releases/latest)
 2. Open `AirDash-{version}-arm64.dmg`
 3. Drag `AirDash.app` to the Applications folder
-4. Launch AirDash from Applications
+4. Launch AirDash from Applications. The app isn't notarized, so macOS blocks the first launch: open System Settings → Privacy & Security and click **Open Anyway** (or run `xattr -dr com.apple.quarantine /Applications/AirDash.app`)
 5. On first launch, it automatically installs itself as a background service
 
 ### Option 2: Standalone Binary
