@@ -235,7 +235,7 @@ Contributions are welcome! Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) 
 
 See [LICENSE](LICENSE) file for details.
 
-Created by [Lukasz Jagiello](https://lukasz.jagiello.org).
+Created by [Lukasz Jagiello](https://lukasz.jagiello.org). Write-up: [lukasz.jagiello.org/projects/airdash](https://lukasz.jagiello.org/projects/airdash).
 
 ## Acknowledgments
 
